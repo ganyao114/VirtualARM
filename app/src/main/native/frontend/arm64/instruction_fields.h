@@ -5,16 +5,22 @@
 #pragma once
 
 #include "base/marcos.h"
+#include "includes/cpu.h"
 
 namespace Instruction {
     namespace A64 {
 
-        enum SHIFT_TYPE {
-            LSL = 0,
-            LSR = 1,
-            ASR = 2,
-            ROR = 3
+        enum Shift {
+            NO_SHIFT = -1,
+            LSL = 0x0,
+            LSR = 0x1,
+            ASR = 0x2,
+            ROR = 0x3,
+            MSL = 0x4,
+            RRX = 0x4
         };
+
+        enum AddressMode { Offset, PreIndex, PostIndex, NonAddrMode};
 
 
         enum Condition {
@@ -102,6 +108,129 @@ namespace Instruction {
             TODO,
         };
 
+#define AARCH64_REGISTER_CODE_LIST(R)                                          \
+  R(0)  R(1)  R(2)  R(3)  R(4)  R(5)  R(6)  R(7)                               \
+  R(8)  R(9)  R(10) R(11) R(12) R(13) R(14) R(15)                              \
+  R(16) R(17) R(18) R(19) R(20) R(21) R(22) R(23)                              \
+  R(24) R(25) R(26) R(27) R(28) R(29) R(30) R(31)                              \
+
+
+
+#define XREG(n) X##n,
+        enum class XReg {
+            AARCH64_REGISTER_CODE_LIST(XREG)
+            LR = static_cast<int>(X30),
+            SP = static_cast<int>(X31),
+            ZR = static_cast<int>(X31)
+        };
+#undef XREG
+
+#define WREG(n) W##n,
+        enum class WReg {AARCH64_REGISTER_CODE_LIST(WREG)};
+#undef WREG
+
+#define DREG(n) D##n,
+        enum class DReg {AARCH64_REGISTER_CODE_LIST(DREG)};
+#undef DREG
+
+#define QREG(n) Q##n,
+        enum class QReg {AARCH64_REGISTER_CODE_LIST(QREG)};
+#undef QREG
+
+#define VREG(n) V##n,
+        enum class VReg {AARCH64_REGISTER_CODE_LIST(VREG)};
+#undef VREG
+
+        class A64Register : public CPU::Register {
+
+        };
+
+        class GeneralRegister : public A64Register {
+        public:
+            GeneralRegister();
+            GeneralRegister(XReg xreg);
+            GeneralRegister(WReg wreg);
+            bool IsW() const {
+                return is_w_;
+            }
+            bool IsX() const {
+                return !is_w_;
+            };
+        private:
+            bool is_w_ = false;
+            union {
+                WReg wreg_;
+                XReg xreg_;
+            };
+        };
+
+#define XREG(x) GeneralRegister(XReg(x))
+#define WREG(x) GeneralRegister(WReg(x))
+
+        class VRegister : public A64Register {
+
+        };
+
+        class SystemRegister {
+        public:
+
+            union SystemReg {
+                u16 value;
+                struct {
+                    u16 op2:3;
+                    u16 CRm:4;
+                    u16 CRn:4;
+                    u16 op1:3;
+                    u16 op0:2;
+                };
+            };
+
+            SystemRegister();
+
+            SystemRegister(u16 value);
+
+            SystemRegister(u16 op0, u16 op1, u16 crn, u16 crm, u16 op2);
+
+            FORCE_INLINE u16 Value() const {
+                return value.value;
+            }
+
+            bool operator==(const SystemRegister &rhs) const {
+                return value.value == rhs.value.value;
+            }
+
+            bool operator!=(const SystemRegister &rhs) const {
+                return value.value != rhs.value.value;
+            }
+
+        protected:
+            SystemReg value{};
+        };
+
+        class Operand {
+        public:
+            inline explicit Operand(){};
+            inline explicit Operand(s64 imm)
+                    : immediate_(imm), shift_(NO_SHIFT), extend_(NO_EXTEND), shift_extend_imm_(0) {}
+            inline explicit Operand(GeneralRegister reg, int32_t imm = 0, Shift shift = LSL)
+                    : immediate_(0), reg_(reg), shift_(shift), extend_(NO_EXTEND), shift_extend_imm_(imm) {}
+            inline explicit Operand(GeneralRegister reg, Extend extend, int32_t imm = 0)
+                    : immediate_(0), reg_(reg), shift_(NO_SHIFT), extend_(extend), shift_extend_imm_(imm) {}
+
+            // =====
+
+            bool IsImmediate() const { return false; }
+            bool IsShiftedRegister() const { return  (shift_ != NO_SHIFT); }
+            bool IsExtendedRegister() const { return (extend_ != NO_EXTEND); }
+
+        public:
+            s64 immediate_;
+            GeneralRegister reg_{};
+            Shift shift_;
+            Extend extend_;
+            s32 shift_extend_imm_;
+        };
+
         struct AArch64Inst {
             union {
                 u32 raw;
@@ -120,7 +249,7 @@ namespace Instruction {
                 //L1 Type
                 FIELD(instr_type_1, 25, 28);
 
-                //system & branch
+                //branch
                 FIELD(sys_bch_op0, 29, 31);
                 FIELD(sys_bch_op1, 22, 25);
                 FIELD(bch_cond_type, 22, 22);
@@ -130,25 +259,39 @@ namespace Instruction {
                 FIELD(bch_ucond_op4, 0, 4);
                 FIELD(bch_ucond_offset, 0, 25);
                 FIELD(bch_cond_offset, 5, 23);
+                //exception
                 FIELD(exp_gen_ll, 0, 1);
                 FIELD(exp_gen_num, 5, 20);
+                //system
+                FIELD(system_register, 5, 19); // System register?
+                FIELD(o0, 19, 19); // System register?
+                FIELD(op1, 16, 18); // System register?
+                FIELD(CRn, 12, 15); // System register?
+                FIELD(CRm, 8, 11); // System register? Also used for barriers
+                FIELD(op2, 5, 7); // System register?
+
+                //data process type
+                FIELD(dp_imm, 10, 21);
+
+                FIELD(dp_type, 23, 25);
+                FIELD(addsub_imm_op, 29, 31);
+                FIELD(addsub_imm_update_flag, 29, 29);
+                FIELD(addsub_imm_update_sub, 30, 30);
+                FIELD(addsub_imm_update_64bit, 30, 30);
+                FIELD(addsub_imm_shift, 22, 22);
+                //adrp
+                FIELD(adr_page, 31, 31);
 
                 FIELD(_5_11, 5, 11);
                 FIELD(_5_18, 5, 18);
                 FIELD(_8_11, 8, 11);
                 FIELD(_10_12, 10, 12); // immediate value for some DPReg operations
                 FIELD(_10_15, 10, 15); // immediate value for some DPReg operations
-                FIELD(_10_21, 10, 21); // immediate value for some DPImm operations
                 FIELD(_12_20, 12, 20);
                 FIELD(_13_20, 13, 20); // immediate value for some float operations
                 FIELD(_15_21, 15, 21); // immediate value for some Load/Store pair operations
                 FIELD(_16_20, 16, 20); // immediate value for some DPReg operations
                 FIELD(_22_23, 22, 23); // size value for some SIMD operations
-                FIELD(o0, 19, 19); // System register?
-                FIELD(op1, 16, 18); // System register?
-                FIELD(CRn, 12, 15); // System register?
-                FIELD(CRm, 8, 11); // System register? Also used for barriers
-                FIELD(op2, 5, 7); // System register?
                 FIELD(option, 13, 15); // extend option for extened register instructions
                 FIELD(hw, 21, 22); // shift amount for mov instructions
                 FIELD(opc, 29, 30); // additional opcode for instructions

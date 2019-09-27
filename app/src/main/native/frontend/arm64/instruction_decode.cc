@@ -41,10 +41,6 @@ InstrA64Ref FastBranchDecoder::Decode(InstrA64 *instr_bits) {
     return instruction;
 }
 
-InstrA64Ref FastBranchDecoder::DecodeDPImm(InstrA64 instr_bits) {
-    return nullptr;
-}
-
 InstrA64Ref FastBranchDecoder::DecodeDPReg(InstrA64 instr_bits) {
     return nullptr;
 }

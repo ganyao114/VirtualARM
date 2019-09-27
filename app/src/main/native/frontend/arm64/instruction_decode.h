@@ -12,13 +12,12 @@ namespace Instruction {
         class Decoder {
         public:
             virtual InstrA64Ref Decode(InstrA64* instr_bits) = 0;
-            virtual OpcodeA64 DecodeOpCode(InstrA64 instr_bits, InstrTypeA64 type = Invalid) = 0;
         };
 
         class DefaultDecoder : public Decoder {
         public:
             InstrA64Ref Decode(InstrA64* instr_bits) override;
-            OpcodeA64 DecodeOpCode(InstrA64 instr_bits, InstrTypeA64 type = Invalid) override;
+            static OpcodeA64 DecodeOpCode(InstrA64 instr_bits, InstrTypeA64 type = Invalid);
         };
 
         class FastBranchDecoder : public DefaultDecoder {

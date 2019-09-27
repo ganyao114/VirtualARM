@@ -74,12 +74,10 @@ InstrA64Ref FastBranchDecoder::DecodeSystemAndBranch(InstrA64 instr_bits) {
                 }
             } else if (op1 < 4) {
                 // 00xx - Exception generation
-                OpcodeA64 opcode = DefaultDecoder::DecodeOpCode(instr_bits, ExpGen);
                 ret = SharedPtr<InstrA64ExpGen>(new InstrA64ExpGen());
-                ret->SetOpcode(opcode);
             } else if (op1 == 4) {
                 // 0100 - System
-                OpcodeA64 opcode = DefaultDecoder::DecodeOpCode(instr_bits, System);
+                ret = SharedPtr<InstrA64System>(new InstrA64System());
             } else {
                 // 0101 & 011x - Unallocated
                 return nullptr;

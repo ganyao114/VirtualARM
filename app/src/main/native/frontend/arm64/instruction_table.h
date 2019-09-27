@@ -30,6 +30,7 @@ namespace Instruction {
 #define INST(x, ...) x,
 #define Type(x)
         enum class OpcodeA64 : InstrA64 {
+            UN_DECODED,
             INVALID,
 
 #include "opcodes_table.inl"

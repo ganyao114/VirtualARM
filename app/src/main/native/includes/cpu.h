@@ -9,8 +9,7 @@
 namespace CPU {
 
 
-    class Register : public BaseObject {
-
+    class Register {
     };
 
 }

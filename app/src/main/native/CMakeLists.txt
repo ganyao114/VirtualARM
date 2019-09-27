@@ -9,15 +9,17 @@ include_directories(.)
 include_directories(externals/ext-boost)
 
 add_library(VirtualARM SHARED
-    virtual_arm.cc
-    base/marcos.cc
-    instruction/instruction.cc
-    frontend/arm64/instruction_fields.cc
-    frontend/arm64/instruction_aarch64.cc
-    frontend/arm64/instruction_table.cc
-    frontend/arm64/instruction_decode.cc
-    frontend/arm64/decodes/decode_system_branch.cc
-    frontend/arm64/cpu_arm64.cc
+        virtual_arm.cc
+        base/marcos.cc
+        instruction/instruction.cc
+        frontend/arm64/instruction_fields.cc
+        frontend/arm64/instruction_aarch64.cc
+        frontend/arm64/instruction_table.cc
+        frontend/arm64/instruction_decode.cc
+        frontend/arm64/decodes/decode_system_branch.cc
+        frontend/arm64/decodes/decode_data_process_imm.cc
+        frontend/arm64/cpu_arm64.cc
+        block/code_block.cc
 )
 
 

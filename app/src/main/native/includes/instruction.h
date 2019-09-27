@@ -161,11 +161,15 @@ namespace Instruction {
 
     protected:
         Type type_;
-        u32 opcode_;
+        u32 opcode_ = 0;
         std::vector<ArgRef> args_;
         T* pc_;
     };
 
     using InstructionRef = SharedPtr<Instruction<Base>>;
+
+    class Location {
+
+    };
 
 }

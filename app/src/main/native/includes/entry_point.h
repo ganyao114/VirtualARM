@@ -6,6 +6,11 @@
 
 #pragma once
 
-namespace CPU {
+namespace Code {
+
+    using EntryPoint = void*;
+    using EntryPointFromJitToJit = void(*)();
+    using EntryPointFromJitToInterpreter = void(*)();
+    using EntryPointFromInterpreterToInterpreter = void(*)();
 
 }
