@@ -24,20 +24,25 @@ InstrA64Ref DefaultDecoder::Decode(InstrA64 *instr_bits) {
 
 InstrA64Ref FastBranchDecoder::Decode(InstrA64 *instr_bits) {
     AArch64Inst *inst = ForceCast<AArch64Inst*>(instr_bits);
-    OpcodeA64 opcode;
     InstrA64Ref instruction;
     switch (inst->instr_type_1) {
         case 0: case 1: case 2: case 3:
-            opcode = OpcodeA64::INVALID;
             break;
         case 8: case 9:
+            // 100x - Data processing - immediate
+            instruction = DecodeDPImm(*instr_bits);
             break;
+        case 5: case 13:
+            // x101 - Data processing - register
+            instruction = DecodeDPReg(*instr_bits);
         case 10:case 11:
             // 101x - Branches, exception generating and system instructions
-            DecodeSystemAndBranch(*instr_bits);
+            instruction = DecodeSystemAndBranch(*instr_bits);
             break;
     }
-    instruction->SetPC(inst);
+    if (instruction) {
+        instruction->SetPC(inst);
+    }
     return instruction;
 }
 

@@ -8,7 +8,7 @@ include_directories(.)
 
 include_directories(externals/ext-boost)
 
-add_library(VirtualARM SHARED
+add_library(virtual_arm SHARED
         virtual_arm.cc
         base/marcos.cc
         instruction/instruction.cc
@@ -23,4 +23,4 @@ add_library(VirtualARM SHARED
 )
 
 
-target_link_libraries(VirtualARM android log)
+target_link_libraries(virtual_arm android log)

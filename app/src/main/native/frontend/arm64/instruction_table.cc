@@ -32,7 +32,8 @@ void InstructionTableA64::init() {
 #define Type(x) cur_type_ = InstrTypeA64::x;
 
     instr_table_[OpcodeA64::INVALID] = {OpcodeA64::INVALID, {},"INVALID", {}, Unallocated};
-#include "opcodes_table.inl"
+#include "instructions_table.inl"
+
     instr_table_[OpcodeA64::NUM_INSTRUCTIONS] = {OpcodeA64::NUM_INSTRUCTIONS, {},"NUM_INSTRUCTIONS", {}, Unallocated};
 
 #undef INST

@@ -62,13 +62,13 @@ namespace Instruction {
 
             void SetOffset(s32 offset);
 
-            XReg GetRt() const;
+            GeneralRegister &GetRt();
 
-            void SetRt(XReg rt);
+            void SetRt(GeneralRegister rt);
 
-            XReg GetRn() const;
+            GeneralRegister &GetRn();
 
-            void SetRn(XReg rn);
+            void SetRn(GeneralRegister rn);
 
             bool IsAbs() const;
 
@@ -90,8 +90,8 @@ namespace Instruction {
             bool link_ = false;
             s32 offset_;
             VAddr target_;
-            XReg rt_;
-            XReg rn_;
+            GeneralRegister rt_;
+            GeneralRegister rn_;
         };
 
         class InstrA64ExpGen : public InstructionA64 {
@@ -127,9 +127,9 @@ namespace Instruction {
 
             void SetSystemRegister(const SystemRegister &systemRegister);
 
-            XReg GetRt() const;
+            GeneralRegister &GetRt();
 
-            void SetRt(XReg rt);
+            void SetRt(GeneralRegister rt);
 
             InstrTypeA64 TypeOfA64() const override {
                 return InstrTypeA64::System;
@@ -141,7 +141,7 @@ namespace Instruction {
 
         protected:
             SystemRegister system_register_{};
-            XReg rt_;
+            GeneralRegister rt_;
         };
 
         class InstrA64PCRelAddr : public InstructionA64 {
@@ -158,7 +158,7 @@ namespace Instruction {
             bool PageAlign() const;
 
             InstrTypeA64 TypeOfA64() const override {
-                return InstrTypeA64::DataprocessingImmediate;
+                return InstrTypeA64::PCRelAdr;
             };
 
             bool Disassemble(AArch64Inst &t) override;
@@ -189,6 +189,10 @@ namespace Instruction {
 
             bool Is64Bit() const;
 
+            InstrTypeA64 TypeOfA64() const override {
+                return InstrTypeA64::AddSubImmediate;
+            };
+
             bool Disassemble(AArch64Inst &t) override;
 
             bool Assemble() override;
@@ -200,6 +204,32 @@ namespace Instruction {
             bool shift_ = false;
             GeneralRegister rd_;
             Operand operand_;
+        };
+
+        class InstrA64MovWide : public InstructionA64 {
+        public:
+
+            InstrA64MovWide();
+
+            GeneralRegister &GetRd();
+
+            void SetRd(GeneralRegister &rd);
+
+            u16 GetImm() const;
+
+            void SetImm(u16 imm);
+
+            InstrTypeA64 TypeOfA64() const override {
+                return InstrTypeA64::MovWide;
+            };
+
+            bool Disassemble(AArch64Inst &t) override;
+
+            bool Assemble() override;
+
+        private:
+            GeneralRegister rd_;
+            u16 imm_;
         };
     }
 }

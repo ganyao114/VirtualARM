@@ -55,6 +55,35 @@ InstrA64Ref DecodeAddSubImm(AArch64Inst& inst) {
     return instr;
 }
 
+InstrA64Ref DecodeMovWide(AArch64Inst& inst) {
+    bool is64 = inst.addsub_imm_update_64bit == 1;
+    auto opc = inst.mov_imm_opc;
+    auto hw = inst.mov_imm_hw;
+    if (((!is64) && (hw > 1)) || (opc == 1)) {
+        return nullptr;
+    }
+    SharedPtr<InstrA64MovWide> instr(new InstrA64MovWide());
+    switch (opc) {
+        case 0:
+            // MOVN
+            instr->SetOpcode(OpcodeA64::MOVN);
+            break;
+        case 2:
+            // MOVZ
+            instr->SetOpcode(OpcodeA64::MOVZ);
+            break;
+        case 3:
+            // MOVK
+            instr->SetOpcode(OpcodeA64::MOVK);
+            break;
+    }
+    return instr;
+}
+
+InstrA64Ref DecodeLogicalImm(AArch64Inst& inst) {
+
+}
+
 InstrA64Ref FastBranchDecoder::DecodeDPImm(InstrA64 instr_bits) {
     AArch64Inst inst(instr_bits);
     switch (inst.dp_type) {
@@ -63,28 +92,22 @@ InstrA64Ref FastBranchDecoder::DecodeDPImm(InstrA64 instr_bits) {
             // 00x - PC-rel. addressing
             return DecodePCRel(inst);
         case 2:
-//        case 3:
-//            // 01x - Add/subtract (immediate)
-//            return DecodeAddSubImm(inst);
-//        case 4: {
-//            // 100 - Logical (immediate)
-//            DecodeLogicalImm(inst);
-//            break;
-//        }
-//        case 5: {
-//            // 101 - Move wide (immediate)
-//            DecodeMoveWide(bits, inst);
-//            break;
-//        }
+        case 3:
+            // 01x - Add/subtract (immediate)
+            return DecodeAddSubImm(inst);
+        case 4:
+            // 100 - Logical (immediate)
+            return DecodeLogicalImm(inst);
+        case 5:
+            // 101 - Move wide (immediate)
+            return DecodeMovWide(inst);
 //        case 6: {
 //            // 110 - Bitfield
 //            DecodeBitfield(bits, inst);
-//            break;
 //        }
 //        case 7: {
 //            // 111 - Extract
 //            DecodeExtract(bits, inst);
-//            break;
 //        }
         default:
             return nullptr;
