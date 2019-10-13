@@ -165,7 +165,7 @@ InstrA64ExpGen::InstrA64ExpGen() {
 bool InstrA64ExpGen::Disassemble(AArch64Inst &inst) {
     InstructionA64::Disassemble(inst);
     to_exception_level_ = ExceptionLevel(inst.exp_gen_ll);
-    SetImm(static_cast<u16>(inst.exp_gen_num));
+    SetImm(static_cast<u16>(inst.imm16));
     switch (GetOpcode()) {
         case OpcodeA64::SVC:
             break;
@@ -180,7 +180,7 @@ bool InstrA64ExpGen::Disassemble(AArch64Inst &inst) {
 
 bool InstrA64ExpGen::Assemble() {
     *pc_ = InstructionTableA64::Get().GetInstrInfo(GetOpcode()).mask_pair.second;
-    pc_->exp_gen_num = GetImm();
+    pc_->imm16 = GetImm();
     return true;
 }
 
@@ -310,7 +310,13 @@ bool InstrA64AddSubImm::Disassemble(AArch64Inst &inst) {
 }
 
 bool InstrA64AddSubImm::Assemble() {
-    return InstructionA64::Assemble();
+    *pc_ = InstructionTableA64::Get().GetInstrInfo(GetOpcode()).mask_pair.second;
+    pc_->addsub_imm_update_sub = is_sub_ ? 1 : 0;
+    pc_->addsub_imm_update_64bit = is_64bit ? 1 : 0;
+    pc_->addsub_imm_update_flag = update_flag_ ? 1 : 0;
+    pc_->Rd = rd_.Code();
+    pc_->Rn = operand_.reg_.Code();
+    return true;
 }
 
 bool InstrA64AddSubImm::IsSub() const {
@@ -369,9 +375,90 @@ bool InstrA64MovWide::Disassemble(AArch64Inst &inst) {
     } else {
         rd_ = WREG(inst.Rd);
     }
-
+    imm_ = inst.imm16;
+    shift_ = Shift(inst.hw * 16);
+    return true;
 }
 
 bool InstrA64MovWide::Assemble() {
+    *pc_ = InstructionTableA64::Get().GetInstrInfo(GetOpcode()).mask_pair.second;
+    pc_->imm16 = imm_;
+    pc_->hw = shift_ / 16;
+    pc_->Rd = rd_.Code();
+    pc_->sf = rd_.IsX() ? 1 : 0;
+    return true;
+}
+
+InstrA64MovWide::Shift InstrA64MovWide::GetShift() const {
+    return shift_;
+}
+
+void InstrA64MovWide::SetShift(InstrA64MovWide::Shift shift) {
+    shift_ = shift;
+}
+
+u64 InstrA64MovWide::GetValue(u64 old_value) {
+    u64 value = static_cast<u64>(imm_) << shift_;
+    if (GetOpcode() == OpcodeA64::MOVN) {
+        // MOVN
+        value = ~value;
+    } else if (GetOpcode() == OpcodeA64::MOVK) {
+        // MOVK
+        u64 mask = ~(0xFFFFllu << shift_);
+        old_value &= mask;
+        value = old_value | value;
+    }
+    if (rd_.IsW()) {
+        value &= Bitmask<32, u64>();
+    }
+    return value;
+}
+
+//LogicalImm
+InstrA64LogicalImm::InstrA64LogicalImm() {}
+
+inline u64 GetLogicalImmediate(AArch64Inst& inst) {
+    u64 size = (static_cast<u64>(inst.N) << 6) | ((~static_cast<u64>(inst.imms)) & Bitmask<6, u64>());
+    u64 length = 0;
+    for (; size > 1; length++, size >>= 1);
+    // TODO assert for length?
+    u64 levels = Bitmask(length);
+    u64 S = inst.imms & levels;
+    u64 R = inst.immr & levels;
+    u64 esize = 1llu << length;
+    u64 welem = Bitmask(S + 1);
+    welem = (welem >> R) | ((welem << (esize - R)) & Bitmask(esize)); // ROR(welem, R)
+    u64 ret = 0;
+    for (u64 i = 0u; i < 64 / esize; i++) {
+        ret |= welem;
+        welem <<= esize;
+    }
+    return ret;
+}
+
+bool InstrA64LogicalImm::Disassemble(AArch64Inst &inst) {
+    InstructionA64::Disassemble(inst);
+    imm_ = GetLogicalImmediate(inst);
+    bool is64 = inst.sf == 1;
+    if (is64) {
+        rd_ = XREG(inst.Rd);
+    } else {
+        rd_ = WREG(inst.Rd);
+    }
+    update_flags_ = GetOpcode() == OpcodeA64::ANDS_imm;
+    return true;
+}
+
+bool InstrA64LogicalImm::Assemble() {
     return InstructionA64::Assemble();
+}
+
+
+//BitField
+InstrA64BitField::InstrA64BitField() {}
+
+
+//Extract
+InstrA64Extract::InstrA64Extract() {
+
 }

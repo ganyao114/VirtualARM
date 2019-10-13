@@ -209,6 +209,13 @@ namespace Instruction {
         class InstrA64MovWide : public InstructionA64 {
         public:
 
+            enum Shift : u8 {
+                Shift0 = 0,
+                Shift1 = 16,
+                Shift2 = 32,
+                Shift3 = 48
+            };
+
             InstrA64MovWide();
 
             GeneralRegister &GetRd();
@@ -218,6 +225,12 @@ namespace Instruction {
             u16 GetImm() const;
 
             void SetImm(u16 imm);
+
+            Shift GetShift() const;
+
+            void SetShift(Shift shift);
+
+            u64 GetValue(u64 old_value);
 
             InstrTypeA64 TypeOfA64() const override {
                 return InstrTypeA64::MovWide;
@@ -230,6 +243,50 @@ namespace Instruction {
         private:
             GeneralRegister rd_;
             u16 imm_;
+            Shift shift_;
+        };
+
+
+        class InstrA64LogicalImm : public InstructionA64 {
+        public:
+
+            InstrA64LogicalImm();
+
+            InstrTypeA64 TypeOfA64() const override {
+                return InstrTypeA64::LogicalImmediate;
+            };
+
+            bool Disassemble(AArch64Inst &t) override;
+
+            bool Assemble() override;
+
+        private:
+            bool update_flags_;
+            GeneralRegister rd_;
+            u64 imm_;
+        };
+
+
+        class InstrA64BitField : public InstructionA64 {
+        public:
+            InstrA64BitField();
+
+            InstrTypeA64 TypeOfA64() const override {
+                return InstrTypeA64::BitField;
+            };
+
+        private:
+
+        };
+
+
+        class InstrA64Extract : public InstructionA64 {
+        public:
+            InstrA64Extract();
+
+            InstrTypeA64 TypeOfA64() const override {
+                return InstrTypeA64::Extract;
+            };
         };
     }
 }

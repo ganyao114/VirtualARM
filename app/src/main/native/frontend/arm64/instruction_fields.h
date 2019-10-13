@@ -155,6 +155,9 @@ namespace Instruction {
             bool IsX() const {
                 return !is_w_;
             };
+            bool IsSP() const {
+                return xreg_ == XReg::SP;
+            };
             u32 Code() const {
                 return static_cast<u32>(xreg_);
             }

@@ -22,6 +22,8 @@ namespace Instruction {
             MovWide,
             PCRelAdr,
             LogicalImmediate,
+            BitField,
+            Extract,
             Branches,
             ExpGen,
             System,

@@ -24,30 +24,18 @@ InstrA64Ref DecodeAddSubImm(AArch64Inst& inst) {
     // b31 - is64
     // b30 - isSub
     // b29 - updatesFlags
-    switch (inst.addsub_imm_op) {
+    switch (inst.opc) {
         case 0:
-            instr->SetOpcode(OpcodeA64::ADD_32_imm);
+            instr->SetOpcode(OpcodeA64::ADD_imm);
             break;
         case 1:
-            instr->SetOpcode(OpcodeA64::ADDS_32_imm);
+            instr->SetOpcode(OpcodeA64::ADDS_imm);
             break;
         case 2:
-            instr->SetOpcode(OpcodeA64::SUB_32_imm);
+            instr->SetOpcode(OpcodeA64::SUB_imm);
             break;
         case 3:
-            instr->SetOpcode(OpcodeA64::SUBS_32_imm);
-            break;
-        case 4:
-            instr->SetOpcode(OpcodeA64::ADD_64_imm);
-            break;
-        case 5:
-            instr->SetOpcode(OpcodeA64::ADDS_64_imm);
-            break;
-        case 6:
-            instr->SetOpcode(OpcodeA64::SUB_64_imm);
-            break;
-        case 7:
-            instr->SetOpcode(OpcodeA64::SUBS_64_imm);
+            instr->SetOpcode(OpcodeA64::SUBS_imm);
             break;
         default:
             return nullptr;
@@ -76,12 +64,83 @@ InstrA64Ref DecodeMovWide(AArch64Inst& inst) {
             // MOVK
             instr->SetOpcode(OpcodeA64::MOVK);
             break;
+        default:
+            return nullptr;
     }
     return instr;
 }
 
 InstrA64Ref DecodeLogicalImm(AArch64Inst& inst) {
 
+    if (inst.sf != 1 && (inst.N == 1)) {
+        return nullptr;
+    }
+
+    SharedPtr<InstrA64LogicalImm> instr(new InstrA64LogicalImm());
+
+    switch (inst.opc) {
+        case 0:
+            // AND (immediate)
+            instr->SetOpcode(OpcodeA64::AND_imm);
+            break;
+        case 1:
+            // ORR (immediate)
+            instr->SetOpcode(OpcodeA64::ORR_imm);
+            break;
+        case 2:
+            // EOR (immediate)
+            instr->SetOpcode(OpcodeA64::EOR_imm);
+            break;
+        case 3:
+            // ANDS (immediate)
+            instr->SetOpcode(OpcodeA64::ANDS_imm);
+            break;
+        default:
+            return nullptr;
+    }
+
+    return instr;
+}
+
+InstrA64Ref DecodeBitField(AArch64Inst& inst) {
+    if ((inst.sf != inst.N) || (inst.opc == 3)) {
+        return nullptr;
+    }
+    if ((inst.sf == 0) && ((inst.immr > 31) || (inst.imms > 31))) {
+        return nullptr;
+    }
+
+    SharedPtr<InstrA64BitField> instr(new InstrA64BitField());
+
+    switch (inst.opc) {
+        case 0:
+            // SBFM
+            instr->SetOpcode(OpcodeA64::SBFM);
+            break;
+        case 1:
+            // BFM
+            instr->SetOpcode(OpcodeA64::BFM);
+            break;
+        case 2:
+            // UBFM
+            instr->SetOpcode(OpcodeA64::UBFM);
+            break;
+        default:
+            return nullptr;
+    }
+
+    return instr;
+}
+
+InstrA64Ref DecodeExtract(AArch64Inst& inst) {
+    auto op21 = BitRange<29, 30>(inst.raw);
+    if ((inst.sf == 1) && (op21 == 0) && (inst.o0 == 0)) {
+        SharedPtr<InstrA64Extract> instr(new InstrA64Extract());
+        instr->SetOpcode(OpcodeA64::EXTR);
+        return instr;
+    } else {
+        return nullptr;
+    }
 }
 
 InstrA64Ref FastBranchDecoder::DecodeDPImm(InstrA64 instr_bits) {
@@ -101,14 +160,12 @@ InstrA64Ref FastBranchDecoder::DecodeDPImm(InstrA64 instr_bits) {
         case 5:
             // 101 - Move wide (immediate)
             return DecodeMovWide(inst);
-//        case 6: {
-//            // 110 - Bitfield
-//            DecodeBitfield(bits, inst);
-//        }
-//        case 7: {
-//            // 111 - Extract
-//            DecodeExtract(bits, inst);
-//        }
+        case 6:
+            // 110 - Bitfield
+            return DecodeBitField(inst);
+        case 7:
+            // 111 - Extract
+            return DecodeExtract(inst);
         default:
             return nullptr;
     }

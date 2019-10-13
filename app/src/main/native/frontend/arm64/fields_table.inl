@@ -17,7 +17,6 @@ FIELD(bch_ucond_offset, 0, 25);
 FIELD(bch_cond_offset, 5, 23);
 //exception
 FIELD(exp_gen_ll, 0, 1);
-FIELD(exp_gen_num, 5, 20);
 //system
 FIELD(system_register, 5, 19); // System register?
 FIELD(o0, 19, 19); // System register?
@@ -30,7 +29,7 @@ FIELD(op2, 5, 7); // System register?
 FIELD(dp_imm, 10, 21);
 
 FIELD(dp_type, 23, 25);
-FIELD(addsub_imm_op, 29, 31);
+FIELD(addsub_imm_op, 29, 30);
 FIELD(addsub_imm_update_flag, 29, 29);
 FIELD(addsub_imm_update_sub, 30, 30);
 FIELD(addsub_imm_update_64bit, 30, 30);
@@ -71,6 +70,7 @@ FIELD(immlo, 29, 30); // low portion of immediate for PC-rel. addressing
 FIELD(immhi, 5, 23); // high portion of immediate for PC-rel. addressing
 FIELD(imms, 10, 15); // part of immediate for DPImm operations
 FIELD(immr, 16, 21); // part of immediate for DPImm operations
+FIELD(imm16, 5, 20); // u16 immediate
 FIELD(N, 22, 22); // part of immediate for DPImm operations
 FIELD(b40, 19, 23); // immediate for TB(N)Z
 FIELD(b5, 31, 31); // immediate for TB(N)Z

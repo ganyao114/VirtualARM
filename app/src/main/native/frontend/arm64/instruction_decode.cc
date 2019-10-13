@@ -41,6 +41,9 @@ InstrA64Ref FastBranchDecoder::Decode(InstrA64 *instr_bits) {
             break;
     }
     if (instruction) {
+        if (!instruction->Disassemble(*inst) || instruction->Invalid()) {
+            return nullptr;
+        }
         instruction->SetPC(inst);
     }
     return instruction;

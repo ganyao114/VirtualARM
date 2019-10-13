@@ -102,11 +102,11 @@ namespace CPU {
         };
 
         struct CPUContext {
-            std::array<Reg, 31> cpu_registers;
+            Reg cpu_registers[31];
             u64 sp;
             u64 pc;
             PSTATE pstate;
-            std::array<Vec, 32> vector_registers;
+            Vec vector_registers[32];
             u32 fpcr;
             u32 fpsr;
             u64 tpidr;

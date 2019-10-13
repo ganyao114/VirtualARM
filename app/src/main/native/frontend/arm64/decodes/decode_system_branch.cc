@@ -132,8 +132,5 @@ InstrA64Ref FastBranchDecoder::DecodeSystemAndBranch(InstrA64 instr_bits) {
         default:
             break;
     }
-    if (ret && !ret->Invalid()) {
-        ret->Disassemble(inst);
-    }
     return ret;
 }
