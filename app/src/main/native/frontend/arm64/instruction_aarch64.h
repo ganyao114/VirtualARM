@@ -15,8 +15,14 @@ namespace Instruction {
 
 #define DECODE_OFFSET(val, bits, ext) offset_ = SignExtend<s32, (bits + ext)>(val << ext)
 #define ENCODE_OFFSET(bits, ext) TruncateSTo<bits>(GetOffset() >> ext)
+#define ENCODE_OPCODE pc_->raw = InstructionTableA64::Get().GetInstrInfo(GetOpcode()).mask_pair.second
 #define PAGE_OFFSET 12
 #define A64_PAGE_SIZE (2 << PAGE_OFFSET)
+
+        const unsigned kWRegSize = 32;
+        const unsigned kXRegSize = 64;
+        const u64 kWRegMask = UINT64_C(0xffffffff);
+        const u64 kXRegMask = UINT64_C(0xffffffffffffffff);
 
         class InstructionA64 : public Instruction<AArch64Inst> {
         public:
@@ -256,6 +262,16 @@ namespace Instruction {
                 return InstrTypeA64::LogicalImmediate;
             };
 
+            const GeneralRegister &GetRd() const;
+
+            void SetRd(const GeneralRegister &rd);
+
+            u64 GetImm() const;
+
+            void SetImm(u64 imm);
+
+            bool IsUpdateFlags() const;
+
             bool Disassemble(AArch64Inst &t) override;
 
             bool Assemble() override;
@@ -275,8 +291,35 @@ namespace Instruction {
                 return InstrTypeA64::BitField;
             };
 
-        private:
+            const GeneralRegister &GetRd() const;
 
+            void SetRd(const GeneralRegister &rd);
+
+            const GeneralRegister &GetRn() const;
+
+            void SetRn(const GeneralRegister &rn);
+
+            int GetS() const;
+
+            void SetS(int s);
+
+            int GetR() const;
+
+            void SetR(int r);
+
+            bool Disassemble(AArch64Inst &t) override;
+
+            bool Assemble() override;
+
+            u64 GetResult(u64 src, u64 dest);
+
+        private:
+            GeneralRegister rd_, rn_;
+            int S, R;
+            u64 top_bits_;
+            u64 mask_;
+            bool extend_ = false;
+            bool inzero_ = false;
         };
 
 

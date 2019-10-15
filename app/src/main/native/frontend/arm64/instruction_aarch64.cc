@@ -114,7 +114,7 @@ bool InstrA64Branch::Disassemble(AArch64Inst &inst) {
 }
 
 bool InstrA64Branch::Assemble() {
-    *pc_ = InstructionTableA64::Get().GetInstrInfo(GetOpcode()).mask_pair.second;
+    ENCODE_OPCODE;
     switch (GetOpcode()) {
         case OpcodeA64::B_cond:
             pc_->cond = cond_;
@@ -179,7 +179,7 @@ bool InstrA64ExpGen::Disassemble(AArch64Inst &inst) {
 }
 
 bool InstrA64ExpGen::Assemble() {
-    *pc_ = InstructionTableA64::Get().GetInstrInfo(GetOpcode()).mask_pair.second;
+    ENCODE_OPCODE;
     pc_->imm16 = GetImm();
     return true;
 }
@@ -231,7 +231,7 @@ bool InstrA64System::Disassemble(AArch64Inst &inst) {
 }
 
 bool InstrA64System::Assemble() {
-    *pc_ = InstructionTableA64::Get().GetInstrInfo(GetOpcode()).mask_pair.second;
+    ENCODE_OPCODE;
     switch (GetOpcode()) {
         case OpcodeA64::MRS: case OpcodeA64::MSR_imm: case OpcodeA64::MSR_reg:
             pc_->Rd = rt_.Code();
@@ -310,7 +310,7 @@ bool InstrA64AddSubImm::Disassemble(AArch64Inst &inst) {
 }
 
 bool InstrA64AddSubImm::Assemble() {
-    *pc_ = InstructionTableA64::Get().GetInstrInfo(GetOpcode()).mask_pair.second;
+    ENCODE_OPCODE;
     pc_->addsub_imm_update_sub = is_sub_ ? 1 : 0;
     pc_->addsub_imm_update_64bit = is_64bit ? 1 : 0;
     pc_->addsub_imm_update_flag = update_flag_ ? 1 : 0;
@@ -381,7 +381,7 @@ bool InstrA64MovWide::Disassemble(AArch64Inst &inst) {
 }
 
 bool InstrA64MovWide::Assemble() {
-    *pc_ = InstructionTableA64::Get().GetInstrInfo(GetOpcode()).mask_pair.second;
+    ENCODE_OPCODE;
     pc_->imm16 = imm_;
     pc_->hw = shift_ / 16;
     pc_->Rd = rd_.Code();
@@ -425,7 +425,7 @@ inline u64 GetLogicalImmediate(AArch64Inst& inst) {
     u64 levels = Bitmask(length);
     u64 S = inst.imms & levels;
     u64 R = inst.immr & levels;
-    u64 esize = 1llu << length;
+    u64 esize = UINT64_C(1) << length;
     u64 welem = Bitmask(S + 1);
     welem = (welem >> R) | ((welem << (esize - R)) & Bitmask(esize)); // ROR(welem, R)
     u64 ret = 0;
@@ -434,6 +434,94 @@ inline u64 GetLogicalImmediate(AArch64Inst& inst) {
         welem <<= esize;
     }
     return ret;
+}
+
+static bool IsImmLogical(u64 value,
+                             unsigned width,
+                             unsigned* n,
+                             unsigned* imm_s,
+                             unsigned* imm_r) {
+    assert((width == kWRegSize) || (width == kXRegSize));
+
+    bool negate = false;
+    
+    if (value & 1) {
+        negate = true;
+        value = ~value;
+    }
+
+    if (width == kWRegSize) {
+        value <<= kWRegSize;
+        value |= value >> kWRegSize;
+    }
+    
+    u64 a = LowestSetBit(value);
+    u64 value_plus_a = value + a;
+    u64 b = LowestSetBit(value_plus_a);
+    u64 value_plus_a_minus_b = value_plus_a - b;
+    u64 c = LowestSetBit(value_plus_a_minus_b);
+
+    int d, clz_a, out_n;
+    u64 mask;
+
+    if (c != 0) {
+        clz_a = CountLeadingZeros(a, kXRegSize);
+        int clz_c = CountLeadingZeros(c, kXRegSize);
+        d = clz_a - clz_c;
+        mask = ((UINT64_C(1) << d) - 1);
+        out_n = 0;
+    } else {
+        if (a == 0) {
+            return false;
+        } else {
+            clz_a = CountLeadingZeros(a, kXRegSize);
+            d = 64;
+            mask = ~UINT64_C(0);
+            out_n = 1;
+        }
+    }
+
+    if (!IsPowerOf2(d)) {
+        return false;
+    }
+
+    if (((b - a) & ~mask) != 0) {
+        return false;
+    }
+
+    static const u64 multipliers[] = {
+            0x0000000000000001UL,
+            0x0000000100000001UL,
+            0x0001000100010001UL,
+            0x0101010101010101UL,
+            0x1111111111111111UL,
+            0x5555555555555555UL,
+    };
+    u64 multiplier = multipliers[CountLeadingZeros(d, kXRegSize) - 57];
+    u64 candidate = (b - a) * multiplier;
+
+    if (value != candidate) {
+        return false;
+    }
+    
+    int clz_b = (b == 0) ? -1 : CountLeadingZeros(b, kXRegSize);
+    int s = clz_a - clz_b;
+    
+    int r;
+    if (negate) {
+        s = d - s;
+        r = (clz_b + 1) & (d - 1);
+    } else {
+        r = (clz_a + 1) & (d - 1);
+    }
+    
+    if ((n != nullptr) || (imm_s != nullptr) || (imm_r != nullptr)) {
+        *n = out_n;
+        *imm_s = ((2 * -d) | (s - 1)) & 0x3f;
+        *imm_r = r;
+    }
+
+    return true;
 }
 
 bool InstrA64LogicalImm::Disassemble(AArch64Inst &inst) {
@@ -450,12 +538,133 @@ bool InstrA64LogicalImm::Disassemble(AArch64Inst &inst) {
 }
 
 bool InstrA64LogicalImm::Assemble() {
-    return InstructionA64::Assemble();
+    unsigned n, imm_s, imm_r;
+    pc_->raw = InstructionTableA64::Get().GetInstrInfo(GetOpcode()).mask_pair.second;
+    if (IsImmLogical(imm_, rd_.IsX() ? kXRegSize : kWRegSize, &n, &imm_s, &imm_r)) {
+        pc_->N = n;
+        pc_->imms = imm_s;
+        pc_->immr = imm_r;
+        pc_->Rd = rd_.Code();
+    } else {
+        return false;
+    }
+}
+
+const GeneralRegister &InstrA64LogicalImm::GetRd() const {
+    return rd_;
+}
+
+void InstrA64LogicalImm::SetRd(const GeneralRegister &rd) {
+    rd_ = rd;
+}
+
+u64 InstrA64LogicalImm::GetImm() const {
+    return imm_;
+}
+
+void InstrA64LogicalImm::SetImm(u64 imm) {
+    imm_ = imm;
+}
+
+bool InstrA64LogicalImm::IsUpdateFlags() const {
+    return update_flags_;
 }
 
 
 //BitField
-InstrA64BitField::InstrA64BitField() {}
+InstrA64BitField::InstrA64BitField() {
+
+}
+
+const GeneralRegister &InstrA64BitField::GetRd() const {
+    return rd_;
+}
+
+void InstrA64BitField::SetRd(const GeneralRegister &rd) {
+    rd_ = rd;
+}
+
+const GeneralRegister &InstrA64BitField::GetRn() const {
+    return rn_;
+}
+
+void InstrA64BitField::SetRn(const GeneralRegister &rn) {
+    rn_ = rn;
+}
+
+int InstrA64BitField::GetS() const {
+    return S;
+}
+
+void InstrA64BitField::SetS(int s) {
+    S = s;
+}
+
+int InstrA64BitField::GetR() const {
+    return R;
+}
+
+void InstrA64BitField::SetR(int r) {
+    R = r;
+}
+
+bool InstrA64BitField::Disassemble(AArch64Inst &inst) {
+    InstructionA64::Disassemble(inst);
+    bool is64 = inst.sf == 1;
+    unsigned reg_size = is64 ? kXRegSize : kWRegSize;
+    int64_t reg_mask = is64 ? kXRegMask : kWRegMask;
+    R = inst.immr;
+    S = inst.imms;
+    int diff = S - R;
+    u64 mask;
+    if (diff >= 0) {
+        mask = ~UINT64_C(0) >> (64 - (diff + 1));
+        mask = (static_cast<unsigned>(diff) < (reg_size - 1)) ? mask : reg_mask;
+    } else {
+        mask = ~UINT64_C(0) >> (64 - (S + 1));
+        mask = RotateRight(mask, R, reg_size);
+        diff += reg_size;
+    }
+    mask_ = mask;
+    if (GetOpcode() == OpcodeA64::SBFM) {
+        inzero_ = true;
+        extend_ = true;
+    } else if (GetOpcode() == OpcodeA64::UBFM) {
+        inzero_ = true;
+    }
+    top_bits_ = (diff == 63) ? 0 : (~UINT64_C(0) << (diff + 1));
+    if (is64) {
+        rd_ = XREG(inst.Rd);
+        rn_ = XREG(inst.Rn);
+    } else {
+        rd_ = WREG(inst.Rd);
+        rn_ = WREG(inst.Rn);
+    }
+}
+
+bool InstrA64BitField::Assemble() {
+    ENCODE_OPCODE;
+    pc_->immr = static_cast<u32>(R);
+    pc_->imms = static_cast<u32>(S);
+    pc_->sf = rd_.IsX() ? 1 : 0;
+    pc_->Rd = rd_.Code();
+    pc_->Rn = rn_.Code();
+    return true;
+}
+
+u64 InstrA64BitField::GetResult(u64 src, u64 dest) {
+    if (inzero_) {
+        dest = 0;
+    }
+    // Rotate source bitfield into place.
+    u64 result = RotateRight(src, R, rd_.IsX() ? kXRegSize : kWRegSize);
+    // Determine the sign extension.
+    u64 signbits = extend_ && ((src >> S) & 1) ? top_bits_ : 0;
+
+    // Merge sign extension, dest/zero and bitfield.
+    result = signbits | (result & mask_) | (dest & ~mask_);
+    return result;
+}
 
 
 //Extract

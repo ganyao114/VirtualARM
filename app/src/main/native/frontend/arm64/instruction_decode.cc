@@ -60,7 +60,3 @@ InstrA64Ref FastBranchDecoder::DecodeSMID(InstrA64 instr_bits) {
 InstrA64Ref FastBranchDecoder::DecodeFloat(InstrA64 instr_bits) {
     return nullptr;
 }
-
-InstrA64Ref FastBranchDecoder::DecodeLoadAndStore(InstrA64 instr_bits) {
-    return nullptr;
-}

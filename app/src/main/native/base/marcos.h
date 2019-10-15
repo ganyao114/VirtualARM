@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <mutex>
 #include <array>
+#include "compiler.h"
 
 using u8 = std::uint8_t;   ///< 8-bit unsigned byte
 using u16 = std::uint16_t; ///< 16-bit unsigned short
@@ -155,6 +156,41 @@ template<typename T>
 constexpr T ConstLog2(T num) {
     return (num == 1)? 0 : 1 + ConstLog2(num >> 1);
 }
+
+constexpr u64 LowestSetBit(u64 value) { return value & -value; }
+
+template <typename V>
+constexpr bool IsPowerOf2(V value) {
+    return (value != 0) && ((value & (value - 1)) == 0);
+}
+
+int CountLeadingZerosFallBack(uint64_t value, int width);
+
+template <typename V>
+constexpr int CountLeadingZeros(V value, int width = (sizeof(V) * 8)) {
+#if COMPILER_HAS_BUILTIN_CLZ
+    if (width == 32) {
+    return (value == 0) ? 32 : __builtin_clz(static_cast<unsigned>(value));
+  } else if (width == 64) {
+    return (value == 0) ? 64 : __builtin_clzll(value);
+  }
+#endif
+    return CountLeadingZerosFallBack(value, width);
+}
+
+constexpr u64 RotateRight(u64 value,
+                            unsigned int rotate,
+                            unsigned int width) {
+    assert((width > 0) && (width <= 64));
+    u64 width_mask = ~UINT64_C(0) >> (64 - width);
+    rotate &= 63;
+    if (rotate > 0) {
+        value &= width_mask;
+        value = (value << (width - rotate)) | (value >> rotate);
+    }
+    return value & width_mask;
+}
+
 
 //share ptr
 

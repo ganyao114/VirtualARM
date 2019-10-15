@@ -40,6 +40,14 @@ FIELD(mov_imm_hw, 21, 22);
 //adrp
 FIELD(adr_page, 31, 31);
 
+//load and store ops
+FIELD(ldrstr_op0, 31, 31);
+FIELD(ldrstr_op1, 28, 29);
+FIELD(ldrstr_op2, 26, 26);
+FIELD(ldrstr_op3, 23, 24);
+FIELD(ldrstr_op4, 16, 21);
+FIELD(ldrstr_op5, 10, 11);
+
 FIELD(_5_11, 5, 11);
 FIELD(_5_18, 5, 18);
 FIELD(_8_11, 8, 11);
