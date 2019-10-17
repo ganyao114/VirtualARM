@@ -73,5 +73,23 @@ INST(UBFM, "UBFM", (),                               "x10100110xxxxxxxxxxxxxxxxx
 // Immediate - Extract
 INST(EXTR,  "EXTR",(),                               "x00100111x0xxxxxxxxxxxxxxxxxxxxx")
 
+// Load/store register (immediate post-indexed) / (immediate post-indexed) / unsigned immediate
+Type(StoreRegImm)
+INST(STR, "STR", (Wt, loadstore_post_off),           "1x11100x000xxxxxxxxxxxxxxxxxxxxx")
+INST(STRB, "STRB", (Wt, loadstore_post_off),         "0011100x000xxxxxxxxxxxxxxxxxxxxx")
+INST(STR_float, "STR", (Bt, loadstore_post_off),     "xx11110x000xxxxxxxxxxxxxxxxxxxxx")
+INST(STR128, "STR", (Qt, loadstore_post_off),        "0011110x100xxxxxxxxxxxxxxxxxxxxx")
+INST(STRH, "STRH", (Wt, loadstore_post_off),         "0111100x000xxxxxxxxxxxxxxxxxxxxx")
+Type(LoadRegImm)
+INST(LDRB, "LDRB", (Wt, loadstore_post_off),         "0011100x010xxxxxxxxxxxxxxxxxxxxx")
+INST(LDRSB, "LDRSB", (Xt, loadstore_post_off),       "0011100x1x0xxxxxxxxxx1xxxxxxxxxx")
+INST(LDR_float, "LDR", (Bt, loadstore_post_off),     "xx11110x010xxxxxxxxxxxxxxxxxxxxx")
+INST(LDR128, "LDR", (Qt, loadstore_post_off),        "0011110x110xxxxxxxxxxxxxxxxxxxxx")
+INST(LDRH, "LDRH", (Wt, loadstore_post_off),         "0111100x010xxxxxxxxxxxxxxxxxxxxx")
+INST(LDRSH, "LDRSH", (Xt, loadstore_post_off),       "0111100x1x0xxxxxxxxxxxxxxxxxxxxx")
+INST(LDR, "LDR", (Wt, loadstore_post_off),           "1x11100x010xxxxxxxxxxxxxxxxxxxxx")
+INST(LDRSW, "LDRSW", (Xt, loadstore_post_off),       "1011100x100xxxxxxxxxxxxxxxxxxxxx")
+
+
 
 

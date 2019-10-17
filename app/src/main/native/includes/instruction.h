@@ -35,7 +35,8 @@ namespace Instruction {
             Register,
             Imme,
             Shift,
-            Oprand
+            Oprand,
+            MemOprand
         };
 
         virtual Type ArgType() {

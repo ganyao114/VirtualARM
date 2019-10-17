@@ -331,5 +331,69 @@ namespace Instruction {
                 return InstrTypeA64::Extract;
             };
         };
+
+
+        class InstrA64LoadAndStore : public InstructionA64 {
+        public:
+
+            struct StoreFlags {
+                //update Rn
+                u8 StoreWriteBack:1;
+                //use updated Rn
+                u8 StorePostIndex:1;
+                u8 StoreImmSigned:1;
+                u8 StoreFloat:1;
+                u8 Store128BitFloat:1;
+                u8 StoreRelease:1;
+                u8 StoreExclusive:1;
+            };
+
+            enum Size : u8 {
+                Size8 = 0,
+                Size16,
+                Size32,
+                Size64
+            };
+
+            bool Disassemble(AArch64Inst &t) override;
+
+        protected:
+            Size size_;
+            bool is_simd_;
+        };
+
+
+        class InstrA64StoreRegImm : public InstrA64LoadAndStore {
+        public:
+
+            InstrA64StoreRegImm() {}
+
+            InstrTypeA64 TypeOfA64() const override {
+                return InstrTypeA64::StoreRegImm;
+            }
+
+            bool ShouldUpdateRn();
+
+            bool Disassemble(AArch64Inst &t) override;
+
+            bool Assemble() override;
+
+        private:
+            StoreFlags flags_ {0} ;
+            MemOperand operand_{};
+            GeneralRegister rt_;
+        };
+
+        class InstrA64LoadRegImm : public InstrA64LoadAndStore {
+        public:
+
+
+
+            InstrTypeA64 TypeOfA64() const override {
+                return InstrTypeA64::LoadRegImm;
+            };
+
+        };
+
     }
 }

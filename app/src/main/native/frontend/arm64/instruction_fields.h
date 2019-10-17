@@ -20,7 +20,7 @@ namespace Instruction {
             RRX = 0x4
         };
 
-        enum AddressMode { Offset, PreIndex, PostIndex, NonAddrMode};
+        enum AddressMode { Offset = 0, PostIndex = 1, PreIndex = 3, NonAddrMode = 2};
 
         enum Condition {
             EQ, NE, CS, CC, MI, PL, VS, VC, HI, LS, GE, LT, GT, LE, AL, NV,
@@ -116,7 +116,7 @@ namespace Instruction {
 
 
 #define XREG(n) X##n,
-        enum class XReg {
+        enum class XReg : u8 {
             AARCH64_REGISTER_CODE_LIST(XREG)
             LR = static_cast<int>(X30),
             SP = static_cast<int>(X31),
@@ -125,19 +125,19 @@ namespace Instruction {
 #undef XREG
 
 #define WREG(n) W##n,
-        enum class WReg {AARCH64_REGISTER_CODE_LIST(WREG)};
+        enum class WReg : u8 {AARCH64_REGISTER_CODE_LIST(WREG)};
 #undef WREG
 
 #define DREG(n) D##n,
-        enum class DReg {AARCH64_REGISTER_CODE_LIST(DREG)};
+        enum class DReg : u8 {AARCH64_REGISTER_CODE_LIST(DREG)};
 #undef DREG
 
 #define QREG(n) Q##n,
-        enum class QReg {AARCH64_REGISTER_CODE_LIST(QREG)};
+        enum class QReg : u8 {AARCH64_REGISTER_CODE_LIST(QREG)};
 #undef QREG
 
 #define VREG(n) V##n,
-        enum class VReg {AARCH64_REGISTER_CODE_LIST(VREG)};
+        enum class VReg : u8 {AARCH64_REGISTER_CODE_LIST(VREG)};
 #undef VREG
 
         class A64Register : public CPU::Register {
@@ -146,31 +146,79 @@ namespace Instruction {
 
         class GeneralRegister : public A64Register {
         public:
+
+            enum class Type : u8 {
+                U,
+                X,
+                W,
+                V,
+                Q
+            };
+
             GeneralRegister();
             GeneralRegister(XReg xreg);
             GeneralRegister(WReg wreg);
+            GeneralRegister(VReg vreg);
+            GeneralRegister(QReg qreg);
+            bool InValid() const {
+                return type_ == Type::U;
+            }
             bool IsW() const {
-                return is_w_;
+                return type_ == Type::W;
+            }
+            bool IsV() const {
+                return type_ == Type::V;
+            }
+            bool IsQ() const {
+                return type_ == Type::V;
             }
             bool IsX() const {
-                return !is_w_;
+                return type_ == Type::X;
             };
             bool IsSP() const {
-                return xreg_ == XReg::SP;
+                return IsX() && xreg_ == XReg::SP;
+            };
+            bool IsFP() const {
+                switch (type_) {
+                    case Type::V:
+                    case Type::Q:
+                        return true;
+                    default:
+                        return false;
+                }
+            };
+            u8 Size() const {
+                switch (type_) {
+                    case Type::V:
+                        return 128;
+                    case Type::Q:
+                        return 64;
+                    case Type::X:
+                        return 64;
+                    case Type::W:
+                        return 32;
+                    default:
+                        return 64;
+                }
             };
             u32 Code() const {
                 return static_cast<u32>(xreg_);
             }
         private:
-            bool is_w_ = false;
+            Type type_{Type::X};
             union {
                 WReg wreg_;
                 XReg xreg_;
+                VReg vreg_;
+                QReg qreg_;
             };
         };
 
 #define XREG(x) GeneralRegister(XReg(x))
 #define WREG(x) GeneralRegister(WReg(x))
+#define VREG(x) GeneralRegister(VReg(x))
+#define QREG(x) GeneralRegister(QReg(x))
+#define UNKNOW_REG GeneralRegister()
 
         class VRegister : public A64Register {
 
@@ -231,6 +279,57 @@ namespace Instruction {
         public:
             s64 immediate_;
             GeneralRegister reg_{};
+            Shift shift_;
+            Extend extend_;
+            s32 shift_extend_imm_;
+        };
+
+        class MemOperand {
+        public:
+            inline explicit MemOperand() {}
+            inline explicit MemOperand(GeneralRegister &base, s32 offset = 0, AddressMode addr_mode = Offset)
+                    : base_(base), reg_offset_(UNKNOW_REG), offset_(offset), addr_mode_(addr_mode), shift_(NO_SHIFT),
+                      extend_(NO_EXTEND), shift_extend_imm_(0) {}
+
+            inline explicit MemOperand(GeneralRegister &base, GeneralRegister &reg_offset, Extend extend, unsigned extend_imm)
+                    : base_(base), reg_offset_(reg_offset), offset_(0), addr_mode_(Offset), shift_(NO_SHIFT), extend_(extend),
+                      shift_extend_imm_(extend_imm) {}
+
+            inline explicit MemOperand(GeneralRegister base, GeneralRegister &reg_offset, Shift shift = LSL, unsigned shift_imm = 0)
+                    : base_(base), reg_offset_(reg_offset), offset_(0), addr_mode_(Offset), shift_(shift), extend_(NO_EXTEND),
+                      shift_extend_imm_(shift_imm) {}
+
+            inline explicit MemOperand(GeneralRegister& base, const Operand &offset, AddressMode addr_mode = Offset)
+                    : base_(base), reg_offset_(UNKNOW_REG), addr_mode_(addr_mode) {
+                if (offset.IsShiftedRegister()) {
+                    reg_offset_        = offset.reg_;
+                    shift_            = offset.shift_;
+                    shift_extend_imm_ = offset.shift_extend_imm_;
+
+                    extend_ = NO_EXTEND;
+                    this->offset_ = 0;
+                } else if (offset.IsExtendedRegister()) {
+                    reg_offset_        = offset.reg_;
+                    extend_           = offset.extend_;
+                    shift_extend_imm_ = offset.shift_extend_imm_;
+
+                    shift_  = NO_SHIFT;
+                    this->offset_ = 0;
+                }
+            }
+
+            // =====
+
+            bool IsImmediateOffset() const { return (addr_mode_ == Offset); }
+            bool IsRegisterOffset() const { return (addr_mode_ == Offset); }
+            bool IsPreIndex() const { return addr_mode_ == PreIndex; }
+            bool IsPostIndex() const { return addr_mode_ == PostIndex; }
+
+        public:
+            GeneralRegister base_;
+            GeneralRegister reg_offset_;
+            s32 offset_;
+            AddressMode addr_mode_;
             Shift shift_;
             Extend extend_;
             s32 shift_extend_imm_;

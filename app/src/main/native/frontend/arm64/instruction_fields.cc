@@ -24,12 +24,21 @@ SystemRegister::SystemRegister(u16 value) {
 }
 
 GeneralRegister::GeneralRegister() {
+    type_ = Type::U;
 }
 
 GeneralRegister::GeneralRegister(XReg xreg) : xreg_(xreg) {
-    is_w_ = false;
+    type_ = Type::X;
 }
 
 GeneralRegister::GeneralRegister(WReg wreg) : wreg_(wreg) {
-    is_w_ = true;
+    type_ = Type::W;
+}
+
+GeneralRegister::GeneralRegister(VReg vreg) : vreg_(vreg) {
+    type_ = Type::V;
+}
+
+GeneralRegister::GeneralRegister(QReg qreg) : qreg_(qreg) {
+    type_ = Type::Q;
 }

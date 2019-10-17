@@ -27,7 +27,8 @@ namespace Instruction {
             Branches,
             ExpGen,
             System,
-            LoadsAndStores,
+            StoreRegImm,
+            LoadRegImm,
             DataProcessingRegister,
             DataProcessingSIMDAndFP
         };
