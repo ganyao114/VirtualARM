@@ -159,7 +159,7 @@ void InstrA64Branch::SetRn(GeneralRegister rn) {
 
 // Exception Generating
 InstrA64ExpGen::InstrA64ExpGen() {
-    type_ = System;
+    type_ = InstrType::System;
 }
 
 bool InstrA64ExpGen::Disassemble(AArch64Inst &inst) {
@@ -198,9 +198,8 @@ void InstrA64ExpGen::SetImm(u16 imm) {
 
 
 //System
-
 InstrA64System::InstrA64System() {
-    type_ = System;
+    type_ = InstrType::System;
 }
 
 const SystemRegister &InstrA64System::GetSystemRegister() const {
@@ -688,8 +687,10 @@ bool InstrA64StoreRegImm::Disassemble(AArch64Inst &inst) {
     if (operand_.addr_mode_ == PostIndex) {
         flags_.StoreWriteBack = 1;
         flags_.StorePostIndex = 1;
+        flags_.StoreImmSigned = 1;
     } else if (operand_.addr_mode_ == PreIndex) {
         flags_.StoreWriteBack = 1;
+        flags_.StoreImmSigned = 1;
     } else if (operand_.addr_mode_ == Offset){
         // 1x - Load/store register (unsigned immediate)
         if (inst.ldrstr_op3 < 2) {
@@ -699,94 +700,6 @@ bool InstrA64StoreRegImm::Disassemble(AArch64Inst &inst) {
         return false;
     }
     operand_.base_ = XREG(inst.Rn);
-    if (is_simd_) {
-        switch (size_) {
-            case Size8:
-                switch (inst.ldrstr_opc) {
-                    case 0:
-                        SetOpcode(OpcodeA64::STR_float);
-                        break;
-                    case 2:
-                        SetOpcode(OpcodeA64::STR128);
-                        break;
-                    default:
-                        return false;
-                }
-                break;
-            case Size16:
-                switch (inst.ldrstr_opc) {
-                    case 0:
-                        SetOpcode(OpcodeA64::STR_float);
-                        break;
-                    default:
-                        return false;
-                }
-                break;
-            case Size32:
-                switch (inst.ldrstr_opc) {
-                    case 0:
-                        SetOpcode(OpcodeA64::STR_float);
-                        break;
-                    default:
-                        return false;
-                }
-                break;
-            case Size64:
-                switch (inst.ldrstr_opc) {
-                    case 0:
-                        SetOpcode(OpcodeA64::STR_float);
-                        break;
-                    default:
-                        return false;
-                }
-                break;
-            default:
-                return false;
-        }
-    } else {
-        switch (size_) {
-            case Size8:
-                switch (inst.ldrstr_opc) {
-                    case 0:
-                        SetOpcode(OpcodeA64::STRB);
-                        rt_ = WREG(inst.Rt);
-                        break;
-                    default:
-                        return false;
-                }
-                break;
-            case Size16:
-                switch (inst.ldrstr_opc) {
-                    case 0:
-                        SetOpcode(OpcodeA64::STRH);
-                        break;
-                    default:
-                        return false;
-                }
-                break;
-            case Size32:
-                switch (inst.ldrstr_opc) {
-                    case 0:
-                        SetOpcode(OpcodeA64::STR);
-                        break;
-                    case 3:
-                    default:
-                        return false;
-                }
-                break;
-            case Size64:
-                switch (inst.ldrstr_opc) {
-                    case 0:
-                        SetOpcode(OpcodeA64::STR);
-                        break;
-                    default:
-                        return false;
-                }
-                break;
-            default:
-                return false;
-        }
-    }
     u64 num_bits = flags_.Store128BitFloat == 1 ? 4 : ConstLog2(UINT64_C(2) << size_);
     u64 imm;
     if (flags_.StoreImmSigned == 1) {
@@ -796,11 +709,51 @@ bool InstrA64StoreRegImm::Disassemble(AArch64Inst &inst) {
         imm = inst.dp_imm;
         operand_.offset_ = static_cast<s32>(imm << num_bits);
     }
+    return true;
 }
 
 bool InstrA64StoreRegImm::Assemble() {
+    return true;
 }
 
 bool InstrA64StoreRegImm::ShouldUpdateRn() {
     return flags_.StoreWriteBack == 1;
+}
+
+InstrA64LoadAndStore::StoreFlags &InstrA64StoreRegImm::GetFlags() {
+    return flags_;
+}
+
+bool InstrA64LoadRegImm::Disassemble(AArch64Inst &inst) {
+    InstrA64LoadAndStore::Disassemble(inst);
+    operand_.addr_mode_ = AddressMode(inst.addr_mode);
+    if (operand_.addr_mode_ == PostIndex) {
+        flags_.LoadWriteBack = 1;
+        flags_.LoadPostIndex = 1;
+        flags_.LoadImmSigned = 1;
+    } else if (operand_.addr_mode_ == PreIndex) {
+        flags_.LoadWriteBack = 1;
+        flags_.LoadImmSigned = 1;
+    } else if (operand_.addr_mode_ == Offset){
+        // 1x - Load/store register (unsigned immediate)
+        if (inst.ldrstr_op3 < 2) {
+            return false;
+        }
+    } else {
+        return false;
+    }
+    operand_.base_ = XREG(inst.Rn);
+    u64 num_bits = flags_.Load128BitFloat == 1 ? 4 : ConstLog2(UINT64_C(2) << size_);
+    u64 imm;
+    if (flags_.LoadImmSigned == 1) {
+        imm = inst.imm9;
+        operand_.offset_ = SignExtend<s32, 9>(imm);
+    } else if (flags_.LoadExclusive == 0 && flags_.LoadAcquire == 0) {
+        imm = inst.dp_imm;
+        operand_.offset_ = static_cast<s32>(imm << num_bits);
+    }
+}
+
+bool InstrA64LoadRegImm::Assemble() {
+    return true;
 }

@@ -34,6 +34,7 @@ namespace Instruction {
             Cond,
             Register,
             Imme,
+            RetValue,
             Shift,
             Oprand,
             MemOprand
@@ -68,10 +69,6 @@ namespace Instruction {
             u64 imm_u64;
             Condition imm_cond;
         } value_;
-
-    protected:
-        Type type_;
-
     };
 
     template <unsigned bit_size>
@@ -79,10 +76,21 @@ namespace Instruction {
     public:
         static constexpr unsigned bit_size_ = bit_size;
 
+        explicit Imm(u16 value) {
+            value_.imm_u16 = value;
+        }
+
         explicit Imm(u32 value) {
             value_.imm_u32 = value;
-            type_ = Imme;
         }
+
+        explicit Imm(u64 value) {
+            value_.imm_u64 = value;
+        }
+
+        virtual Type ArgType() {
+            return Imme;
+        };
 
         template <typename T = u32>
         T ZeroExtend() const {
@@ -120,28 +128,53 @@ namespace Instruction {
 
     };
 
+    enum class DataSize : u16 {
+        Void = 0,
+        U1 = 1 << 0,
+        U8 = 1 << 1,
+        U16 = 1 << 2,
+        U32 = 1 << 3,
+        U64 = 1 << 4,
+        U128 = 1 << 5
+    };
+
+    constexpr DataSize operator|(DataSize a, DataSize b) {
+        return static_cast<DataSize>(static_cast<u16>(a) | static_cast<u16>(b));
+    }
+
+    constexpr DataSize operator&(DataSize a, DataSize b) {
+        return static_cast<DataSize>(static_cast<u16>(a) & static_cast<u16>(b));
+    }
+
+    template <DataSize reg_size>
+    class Register : public Argument {
+        virtual Type ArgType() {
+            return Type::Register;
+        };
+    };
+
     using ArgRef = SharedPtr<Argument>;
+
+    enum InstrType {
+        NormalCalculations,
+        MemoryAccess,
+        System,
+        ContextSetAndGet,
+        Saturated,
+        Packed,
+        CRC,
+        AES,
+        SMID4,
+        Vector,
+        FloatingCalculation,
+        FloatingConversion,
+        FloatingVector,
+        Branch
+    };
 
     template <typename T>
     class Instruction : public BaseObject {
     public:
-
-        enum Type {
-            NormalCalculations,
-            MemoryAccess,
-            System,
-            ContextSetAndGet,
-            Saturated,
-            Packed,
-            CRC,
-            AES,
-            SMID4,
-            Vector,
-            FloatingCalculation,
-            FloatingConversion,
-            FloatingVector,
-            Branch
-        };
 
         Instruction() {}
 
@@ -161,9 +194,8 @@ namespace Instruction {
         }
 
     protected:
-        Type type_;
+        InstrType type_;
         u32 opcode_ = 0;
-        std::vector<ArgRef> args_;
         T* pc_;
     };
 

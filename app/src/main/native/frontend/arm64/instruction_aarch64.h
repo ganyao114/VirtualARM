@@ -348,6 +348,18 @@ namespace Instruction {
                 u8 StoreExclusive:1;
             };
 
+            struct LoadFlags {
+                u16 LoadWriteBack:1;
+                u16 LoadImmSigned:1;
+                u16 LoadPostIndex:1;
+                u16 LoadExtendResult:1;
+                u16 LoadExtendTo64:1;
+                u16 LoadFloat:1;
+                u16 Load128BitFloat:1;
+                u16 LoadAcquire:1;
+                u16 LoadExclusive:1;
+            };
+
             enum Size : u8 {
                 Size8 = 0,
                 Size16,
@@ -374,6 +386,8 @@ namespace Instruction {
 
             bool ShouldUpdateRn();
 
+            StoreFlags &GetFlags();
+
             bool Disassemble(AArch64Inst &t) override;
 
             bool Assemble() override;
@@ -387,12 +401,18 @@ namespace Instruction {
         class InstrA64LoadRegImm : public InstrA64LoadAndStore {
         public:
 
-
-
             InstrTypeA64 TypeOfA64() const override {
                 return InstrTypeA64::LoadRegImm;
             };
 
+            bool Assemble() override;
+
+            bool Disassemble(AArch64Inst &t) override;
+
+        private:
+            LoadFlags flags_ {0};
+            MemOperand operand_;
+            GeneralRegister rd_;
         };
 
     }

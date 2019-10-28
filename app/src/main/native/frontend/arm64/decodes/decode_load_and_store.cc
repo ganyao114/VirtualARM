@@ -6,6 +6,16 @@
 
 using namespace Instruction::A64;
 
+#define STORE_REG_IMM(x) instruction = SharedPtr<InstrA64StoreRegImm>(new InstrA64StoreRegImm()); \
+instruction->SetOpcode(OpcodeA64::x);
+#define LOAD_REG_IMM(x) instruction = SharedPtr<InstrA64LoadRegImm>(new InstrA64LoadRegImm()); \
+instruction->SetOpcode(OpcodeA64::x);
+
+#define CAST_STORE_REG_IMM DynamicObjectCast<InstrA64StoreRegImm>(instruction)
+#define CAST_LOAD_REG_IMM DynamicObjectCast<InstrA64LoadRegImm>(instruction)
+#define SET_FLAG_STR_REGIMM(x) CAST_STORE_REG_IMM->GetFlags().x = 1;
+
+
 InstrA64Ref DecodeLoadStoreSIMDMultipleStructs(AArch64Inst &instr) {
 
 }
@@ -24,9 +34,6 @@ InstrA64Ref DecodeLoadStorePair(AArch64Inst &instr) {
 
 InstrA64Ref DecodeLoadStoreRegImm(AArch64Inst &instr) {
 
-#define STORE instruction = SharedPtr<InstrA64StoreRegImm>(new InstrA64StoreRegImm())
-#define LOAD instruction = SharedPtr<InstrA64LoadRegImm>(new InstrA64LoadRegImm());
-
     bool is_simd = instr.is_simd == 1;
 
     if ((instr.size != 0) && is_simd == 1 && (instr.ldrstr_opc > 1)) {
@@ -35,45 +42,105 @@ InstrA64Ref DecodeLoadStoreRegImm(AArch64Inst &instr) {
 
     InstrA64Ref instruction;
 
-    switch (instr.ldrstr_opc) {
-        case 0:
-            STORE;
-            break;
-        case 1:
-            LOAD;
-            break;
-        case 2:
-            if (instr.size == 0) {
-                STORE;
-            } else if (!is_simd && instr.size != 3) {
-                LOAD;
-            } else {
+    if (is_simd) {
+        if (instr.size == InstrA64LoadAndStore::Size8) {
+            switch (instr.ldrstr_opc) {
+                case 0:
+                    STORE_REG_IMM(STR_float)
+                    SET_FLAG_STR_REGIMM(StoreFloat)
+                    break;
+                case 1:
+                    LOAD_REG_IMM(LDR_float)
+                    break;
+                case 2:
+                    STORE_REG_IMM(STR128)
+                    SET_FLAG_STR_REGIMM(Store128BitFloat)
+                    SET_FLAG_STR_REGIMM(StoreFloat)
+                    break;
+                case 3:
+                    LOAD_REG_IMM(LDR128)
+                    break;
+            }
+        } else {
+            switch (instr.ldrstr_opc) {
+                case 0:
+                    STORE_REG_IMM(STR_float)
+                    SET_FLAG_STR_REGIMM(StoreFloat)
+                    break;
+                case 1:
+                    LOAD_REG_IMM(LDR_float)
+                    break;
+                default:
+                    return nullptr;
+            }
+        }
+    } else {
+        switch (instr.size) {
+            case InstrA64LoadAndStore::Size8:
+                switch (instr.ldrstr_opc) {
+                    case 0:
+                        STORE_REG_IMM(STRB)
+                        break;
+                    case 1:
+                        LOAD_REG_IMM(LDRB)
+                        break;
+                    case 2:
+                        LOAD_REG_IMM(LDRSB)
+                        break;
+                    case 3:
+                        LOAD_REG_IMM(LDRSB)
+                        break;
+                }
+                break;
+            case InstrA64LoadAndStore::Size16:
+                switch (instr.ldrstr_opc) {
+                    case 0:
+                    STORE_REG_IMM(STRH)
+                        break;
+                    case 1:
+                    LOAD_REG_IMM(LDRH)
+                        break;
+                    case 2:
+                    LOAD_REG_IMM(LDRSH)
+                        break;
+                    case 3:
+                    LOAD_REG_IMM(LDRSH)
+                        break;
+                }
+                break;
+            case InstrA64LoadAndStore::Size32:
+                switch (instr.ldrstr_opc) {
+                    case 0:
+                        STORE_REG_IMM(STR)
+                        break;
+                    case 1:
+                        LOAD_REG_IMM(LDR)
+                        break;
+                    case 2:
+                        LOAD_REG_IMM(LDRSW)
+                        break;
+                    default:
+                        return nullptr;
+                }
+                break;
+            case InstrA64LoadAndStore::Size64:
+                switch (instr.ldrstr_opc) {
+                    case 0:
+                        STORE_REG_IMM(STR)
+                        break;
+                    case 1:
+                        LOAD_REG_IMM(LDR)
+                        break;
+                    default:
+                        return nullptr;
+                }
+                break;
+            default:
                 return nullptr;
-            }
-            break;
-        case 3:
-            if (is_simd) {
-                if (instr.size == 0) {
-                    LOAD;
-                } else {
-                    return nullptr;
-                }
-            } else {
-                if (instr.size < 3) {
-                    LOAD;
-                } else {
-                    return nullptr;
-                }
-            }
-            break;
-        default:
-            return nullptr;
+        }
     }
 
     return instruction;
-
-#undef STORE
-#undef LOAD
 
 }
 
@@ -198,7 +265,7 @@ InstrA64Ref FastBranchDecoder::DecodeLoadAndStore(InstrA64 instr_bits) {
                 }
             } else {
                 // 1x - Load/store register (unsigned immediate)
-                instruction = DecodeLoadStoreUnprivileged(inst);
+                instruction = DecodeLoadStoreRegImm(inst);
             }
             break;
         default:

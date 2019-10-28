@@ -13,7 +13,7 @@ using u8 = std::uint8_t;   ///< 8-bit unsigned byte
 using u16 = std::uint16_t; ///< 16-bit unsigned short
 using u32 = std::uint32_t; ///< 32-bit unsigned word
 using u64 = std::uint64_t; ///< 64-bit unsigned int
-using u128 = std::array<std::uint64_t, 2>;
+using u128 = std::array<u64, 2>;
 
 using s8 = std::int8_t;   ///< 8-bit signed byte
 using s16 = std::int16_t; ///< 16-bit signed short

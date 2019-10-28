@@ -20,6 +20,11 @@ add_library(virtual_arm SHARED
         frontend/arm64/decodes/decode_data_process_imm.cc
         frontend/arm64/decodes/decode_load_and_store.cc
         frontend/arm64/cpu_arm64.cc
+        frontend/ir/opcode_ir.cc
+        frontend/ir/argument_ir.cc
+        frontend/ir/instructions_ir.cc
+        frontend/ir/block_ir.cc
+        frontend/ir/assembler_ir.cc
         block/code_block.cc
 )
 
