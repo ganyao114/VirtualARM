@@ -3,3 +3,6 @@
 //
 
 #include "argument_ir.h"
+
+using namespace Instruction::IR;
+

@@ -87,6 +87,7 @@ FIELD(imm16, 5, 20); // u16 immediate
 FIELD(imm8, 13, 20); // u16 immediate
 FIELD(imm9, 12, 20); // u16 immediate
 FIELD(N, 22, 22); // part of immediate for DPImm operations
+FIELD(L, 22, 22);
 FIELD(b40, 19, 23); // immediate for TB(N)Z
 FIELD(b5, 31, 31); // immediate for TB(N)Z
 FIELD(nzcv, 0, 3); // flags set for cond compare

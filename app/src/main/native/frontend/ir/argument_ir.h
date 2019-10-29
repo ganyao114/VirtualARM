@@ -15,9 +15,12 @@ namespace Instruction {
         template <DataSize reg_size>
         class Return : public Argument {
         public:
+            Return() {}
             Return(const SharedPtr<InstrIR> &instr) : instr_(instr) {}
         private:
-            SharedPtr<InstrIR> instr_;
+            union {
+                SharedPtr<InstrIR> instr_;
+            };
         };
 
         struct FrontedReg {
@@ -30,7 +33,7 @@ namespace Instruction {
         public:
 
             //wrap return value with register
-            RegisterIR(const SharedPtr<Return<reg_size>> &ret):return_(ret){
+            RegisterIR(const Return<reg_size> &ret):return_(ret){
                 for_ret_ = true;
             }
 
@@ -42,7 +45,7 @@ namespace Instruction {
             bool for_ret_ {false};
             bool fronted_reg_ {false};
             union {
-                SharedPtr<Return<reg_size>> return_;
+                Return<reg_size> return_ {};
                 FrontedReg fronted_;
             };
         };
@@ -73,5 +76,11 @@ namespace Instruction {
         using RegU16U32U64 = RegisterIR<DataSize::U16 | DataSize::U32 | DataSize::U64>;
         using RegAny = RegisterIR<DataSize::U1 | DataSize::U8 | DataSize::U16 | DataSize::U32 | DataSize::U64 | DataSize::U128>;
 
+        using Imm1 = Imm<DataSize::U1>;
+        using Imm8 = Imm<DataSize::U8>;
+        using Imm16 = Imm<DataSize::U16>;
+        using Imm32 = Imm<DataSize::U32>;
+        using Imm64 = Imm<DataSize::U64>;
+        using Imm128 = Imm<DataSize::U128>;
     }
 }

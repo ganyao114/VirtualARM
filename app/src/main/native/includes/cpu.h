@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "../base/marcos.h"
+#include "base/marcos.h"
 
 namespace CPU {
 

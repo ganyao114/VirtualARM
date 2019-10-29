@@ -415,5 +415,31 @@ namespace Instruction {
             GeneralRegister rd_;
         };
 
+        class InstrA64LoadLiteral : public InstructionA64 {
+        public:
+
+            InstrA64LoadLiteral();
+
+            InstrTypeA64 TypeOfA64() const override {
+                return InstrTypeA64::LoadLiteral;
+            };
+
+            const GeneralRegister &GetRt() const;
+
+            void SetRt(const GeneralRegister &rt);
+
+            s32 GetOffset() const;
+
+            void SetOffset(s32 offset);
+
+            bool Disassemble(AArch64Inst &t) override;
+
+            bool Assemble() override;
+
+        private:
+            GeneralRegister rt_;
+            s32 offset_;
+        };
+
     }
 }

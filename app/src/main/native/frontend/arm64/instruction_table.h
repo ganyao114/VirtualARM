@@ -29,6 +29,7 @@ namespace Instruction {
             System,
             StoreRegImm,
             LoadRegImm,
+            LoadLiteral,
             DataProcessingRegister,
             DataProcessingSIMDAndFP
         };

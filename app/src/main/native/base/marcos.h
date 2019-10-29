@@ -230,3 +230,5 @@ inline void intrusive_ptr_release(BaseObject *object) {
 using ObjectRef = SharedPtr<BaseObject>;
 
 #define ARG_LIST(...) __VA_ARGS__
+
+#define OFFSET_OF(t, d) __builtin_offsetof(t, d)

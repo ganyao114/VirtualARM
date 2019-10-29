@@ -14,6 +14,8 @@ instruction->SetOpcode(OpcodeA64::x);
 #define CAST_STORE_REG_IMM DynamicObjectCast<InstrA64StoreRegImm>(instruction)
 #define CAST_LOAD_REG_IMM DynamicObjectCast<InstrA64LoadRegImm>(instruction)
 #define SET_FLAG_STR_REGIMM(x) CAST_STORE_REG_IMM->GetFlags().x = 1;
+#define SET_FLAG_LOAD_REGIMM(x) CAST_LOAD_REG_IMM->GetFlags().x = 1;
+
 
 
 InstrA64Ref DecodeLoadStoreSIMDMultipleStructs(AArch64Inst &instr) {
@@ -21,11 +23,101 @@ InstrA64Ref DecodeLoadStoreSIMDMultipleStructs(AArch64Inst &instr) {
 }
 
 InstrA64Ref DecodeLoadStoreExclusive(AArch64Inst &instr) {
+    auto o2 = BitRange<23, 23>(instr.raw);
+    auto o1 = BitRange<21, 21>(instr.raw);
+    auto o0 = BitRange<15, 15>(instr.raw);
 
+    if ((o2 == 1) && (o1 == 0) && (o0 == 0)) {
+        return nullptr;
+    }
+    if ((o2 == 1) && (o1 == 1)) {
+        return nullptr;
+    }
+    if ((instr.size < 2) && (o1 == 1)) {
+        return nullptr;
+    }
+
+//    switch (instr.size) {
+//        case InstrA64LoadAndStore::Size8:
+//            if (o2 == 0) {
+//                if (instr.L == 0) {
+//                    if (o0 == 0) {
+//                        STORE_REG_IMM(STXRB)
+//                        SET_FLAG_STR_REGIMM(StoreExclusive)
+//                    } else {
+//                        // o0 == 1
+//                        STORE_REG_IMM(STLXRB)
+//                        SET_FLAG_STR_REGIMM(StoreExclusive)
+//                        SET_FLAG_STR_REGIMM(StoreRelease)
+//                    }
+//                } else {
+//                    // L == 1
+//                    if (o0 == 0) {
+//                        LOAD_REG_IMM(LDXRB)
+//                        SET_FLAG_LOAD_REGIMM(LoadExclusive)
+//                    } else {
+//                        // o0 == 1
+//                        LOAD_REG_IMM(LDAXRB)
+//                        SET_FLAG_LOAD_REGIMM(LoadExclusive)
+//                        SET_FLAG_LOAD_REGIMM(LoadAcquire)
+//                    }
+//                }
+//            } else {
+//                // o2 == 1
+//                if (instr.L == 0) {
+//                    STORE_REG_IMM(STLRB)
+//                    SET_FLAG_STR_REGIMM(StoreExclusive)
+//                } else {
+//                    // L == 1
+//                    LOAD_REG_IMM(LDARB)
+//                    SET_FLAG_LOAD_REGIMM(LoadExclusive)
+//                    SET_FLAG_LOAD_REGIMM(LoadAcquire)
+//                }
+//            }
+//            break;
+//        case 1:
+//            break;
+//        case 2:
+//            break;
+//    }
 }
 
 InstrA64Ref DecodeLoadRegLiteral(AArch64Inst &instr) {
 
+    enum OP {
+        LDR_W = 0b00,
+        LDR_X = 0b01,
+        LDR_SW = 0b10,
+        LDR_PRFM = 0b11
+    };
+
+    auto opc = BitRange<30, 31>(instr.raw);
+
+    SharedPtr<InstrA64LoadLiteral> instruction(new InstrA64LoadLiteral());
+    if (instr.is_simd == 1) {
+        //LDR_lit_fpsimd
+        instruction->SetOpcode(OpcodeA64::LDR_lit_fpsimd);
+    } else {
+        switch (opc) {
+            case LDR_W:
+            case LDR_X:
+                //LDR_lit_gen
+                instruction->SetOpcode(OpcodeA64::LDR_lit_gen);
+                break;
+            case LDR_SW:
+                //LDRSW_lit
+                instruction->SetOpcode(OpcodeA64::LDRSW_lit);
+                break;
+            case LDR_PRFM:
+                //PRFM_lit
+                instruction->SetOpcode(OpcodeA64::PRFM_lit);
+                break;
+            default:
+                return nullptr;
+        }
+    }
+
+    return instruction;
 }
 
 InstrA64Ref DecodeLoadStorePair(AArch64Inst &instr) {

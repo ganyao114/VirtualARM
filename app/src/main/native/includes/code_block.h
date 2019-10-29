@@ -17,20 +17,20 @@ namespace Code {
         Jit
     };
 
-    class CodeBlock : public BaseObject {
-    private:
+    class CodeBlock {
+    public:
+        u32 id_{0};
         Location code_start_;
         Location code_end_;
         union {
-            EntryPoint entry_;
             EntryPointFromJitToJit entry_jit_to_jit_;
             EntryPointFromInterpreterToInterpreter entry_iter_to_inter_;
-        };
+        } entry_;
         EntryType type;
         /// Conditional to pass in order to execute this block
         Condition cond_;
         u32 cycle_count_ = 0;
-
+        bool static_jump_ {false};
     };
 
 }

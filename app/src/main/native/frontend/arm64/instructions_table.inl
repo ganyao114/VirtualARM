@@ -91,5 +91,26 @@ INST(LDR, "LDR", (Wt, loadstore_post_off),           "1x11100x010xxxxxxxxxxxxxxx
 INST(LDRSW, "LDRSW", (Xt, loadstore_post_off),       "1011100x100xxxxxxxxxxxxxxxxxxxxx")
 
 
+// Loads and stores - Load/Store Exclusive
+Type(StoreRegImm)
+INST(STXR,  "STXRB, STXRH, STXR",(),                 "xx001000000xxxxx011111xxxxxxxxxx")
+INST(STLXR, "STLXRB, STLXRH, STLXR", (),             "xx001000000xxxxx111111xxxxxxxxxx")
+INST(STXP,  "STXP", (),                              "1z001000001sssss0uuuuunnnnnttttt")
+INST(STLXP, "STLXP", (),                             "1z001000001sssss1uuuuunnnnnttttt")
+INST(STLLR, "STLLRB, STLLRH, STLLR", (),             "zz00100010011111011111nnnnnttttt")
+INST(STLR,  "STLRB, STLRH, STLR", (),                "zz00100010011111111111nnnnnttttt")
+Type(LoadRegImm)
+INST(LDXR,  "LDXRB, LDXRH, LDXR", (),                "zz00100001011111011111nnnnnttttt")
+INST(LDAXR, "LDAXRB, LDAXRH, LDAXR", (),             "zz00100001011111111111nnnnnttttt")
+INST(LDXP,  "LDXP", (),                              "1z001000011111110uuuuunnnnnttttt")
+INST(LDAXP, "LDAXP",(),                              "1z001000011111111uuuuunnnnnttttt")
+INST(LDLAR, "LDLARB, LDLARH, LDLAR", (),             "zz00100011011111011111nnnnnttttt")
+INST(LDAR,  "LDARB, LDARH, LDAR", (),                "zz00100011011111111111nnnnnttttt")
+
+// Loads and stores - Load register (literal)
+INST(LDR_lit_gen, "LDR (literal)", (),               "0x011000xxxxxxxxxxxxxxxxxxxxxxxx")
+INST(LDRSW_lit,   "LDRSW (literal)", (),             "10011000xxxxxxxxxxxxxxxxxxxxxxxx")
+INST(PRFM_lit,     "PRFM (literal)", (),             "11011000xxxxxxxxxxxxxxxxxxxxxxxx")
+INST(LDR_lit_fpsimd, "LDR (literal, SIMD&FP)", (),   "xx011100xxxxxxxxxxxxxxxxxxxxxxxx")
 
 

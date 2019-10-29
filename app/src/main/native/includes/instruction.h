@@ -27,7 +27,25 @@ namespace Instruction {
         u16 code;
     };
 
-    class Argument : public BaseObject {
+    enum class DataSize : u16 {
+        Void = 0,
+        U1 = 1 << 0,
+        U8 = 1 << 3,
+        U16 = 1 << 4,
+        U32 = 1 << 5,
+        U64 = 1 << 6,
+        U128 = 1 << 7
+    };
+
+    constexpr DataSize operator|(DataSize a, DataSize b) {
+        return static_cast<DataSize>(static_cast<u16>(a) | static_cast<u16>(b));
+    }
+
+    constexpr DataSize operator&(DataSize a, DataSize b) {
+        return static_cast<DataSize>(static_cast<u16>(a) & static_cast<u16>(b));
+    }
+
+    class Argument {
     public:
         enum Type {
             Unknown,
@@ -71,10 +89,10 @@ namespace Instruction {
         } value_;
     };
 
-    template <unsigned bit_size>
+    template <DataSize bit_size>
     class Imm : public Argument {
     public:
-        static constexpr unsigned bit_size_ = bit_size;
+        static constexpr DataSize bit_size_ = bit_size;
 
         explicit Imm(u16 value) {
             value_.imm_u16 = value;
@@ -127,24 +145,6 @@ namespace Instruction {
         }
 
     };
-
-    enum class DataSize : u16 {
-        Void = 0,
-        U1 = 1 << 0,
-        U8 = 1 << 1,
-        U16 = 1 << 2,
-        U32 = 1 << 3,
-        U64 = 1 << 4,
-        U128 = 1 << 5
-    };
-
-    constexpr DataSize operator|(DataSize a, DataSize b) {
-        return static_cast<DataSize>(static_cast<u16>(a) | static_cast<u16>(b));
-    }
-
-    constexpr DataSize operator&(DataSize a, DataSize b) {
-        return static_cast<DataSize>(static_cast<u16>(a) & static_cast<u16>(b));
-    }
 
     template <DataSize reg_size>
     class Register : public Argument {

@@ -378,7 +378,7 @@ bool InstrA64MovWide::Disassemble(AArch64Inst &inst) {
     } else {
         rd_ = WREG(inst.Rd);
     }
-    imm_ = inst.imm16;
+    imm_ = static_cast<u16>(inst.imm16);
     shift_ = Shift(inst.hw * 16);
     return true;
 }
@@ -757,3 +757,32 @@ bool InstrA64LoadRegImm::Disassemble(AArch64Inst &inst) {
 bool InstrA64LoadRegImm::Assemble() {
     return true;
 }
+
+
+// LDR LIT
+InstrA64LoadLiteral::InstrA64LoadLiteral() {}
+
+bool InstrA64LoadLiteral::Disassemble(AArch64Inst &t) {
+    return InstructionA64::Disassemble(t);
+}
+
+bool InstrA64LoadLiteral::Assemble() {
+    return InstructionA64::Assemble();
+}
+
+const GeneralRegister &InstrA64LoadLiteral::GetRt() const {
+    return rt_;
+}
+
+void InstrA64LoadLiteral::SetRt(const GeneralRegister &rt) {
+    rt_ = rt;
+}
+
+s32 InstrA64LoadLiteral::GetOffset() const {
+    return offset_;
+}
+
+void InstrA64LoadLiteral::SetOffset(s32 offset) {
+    offset_ = offset;
+}
+
