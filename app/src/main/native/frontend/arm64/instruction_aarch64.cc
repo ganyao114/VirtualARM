@@ -752,9 +752,11 @@ bool InstrA64LoadRegImm::Disassemble(AArch64Inst &inst) {
         imm = inst.dp_imm;
         operand_.offset_ = static_cast<s32>(imm << num_bits);
     }
+    return true;
 }
 
 bool InstrA64LoadRegImm::Assemble() {
+    ENCODE_OPCODE;
     return true;
 }
 
@@ -762,12 +764,28 @@ bool InstrA64LoadRegImm::Assemble() {
 // LDR LIT
 InstrA64LoadLiteral::InstrA64LoadLiteral() {}
 
-bool InstrA64LoadLiteral::Disassemble(AArch64Inst &t) {
-    return InstructionA64::Disassemble(t);
+bool InstrA64LoadLiteral::Disassemble(AArch64Inst &inst) {
+    offset_ = DECODE_OFFSET(inst.immhi, 19, 2);
+    switch (GetOpcode()) {
+        case OpcodeA64::LDR_lit_gen:
+        case OpcodeA64::PRFM_lit:
+            rt_ = XREG(inst.Rt);
+            break;
+        case OpcodeA64::LDRSW_lit:
+            rt_ = WREG(inst.Rt);
+            break;
+        case OpcodeA64::LDR_lit_fpsimd:
+            rt_ = VREG(inst.Rt);
+            break;
+    }
+    return true;
 }
 
 bool InstrA64LoadLiteral::Assemble() {
-    return InstructionA64::Assemble();
+    ENCODE_OPCODE;
+    pc_->immhi = ENCODE_OFFSET(19, 2);
+    pc_->Rt = rt_.Code();
+    return true;
 }
 
 const GeneralRegister &InstrA64LoadLiteral::GetRt() const {
@@ -786,3 +804,81 @@ void InstrA64LoadLiteral::SetOffset(s32 offset) {
     offset_ = offset;
 }
 
+
+//Store Pair
+InstrA64StoreRegPair::InstrA64StoreRegPair() {}
+
+bool InstrA64StoreRegPair::Disassemble(AArch64Inst &inst) {
+
+    InstrA64LoadAndStore::Disassemble(inst);
+
+    if (!is_simd_) {
+        if ((inst.L == 0 && TestBit<0>(size_)) || size_ == 0b11) {
+            return false;
+        }
+    } else {
+        flags_.StoreFloat = 1;
+        if (size_ == 0b10) {
+            flags_.Store128BitFloat = 1;
+        } else if (size_ == 0b11) {
+            return false;
+        }
+    }
+
+    if (inst.wback && (inst.Rt == inst.Rn || inst.Rt2 == inst.Rn) && inst.Rn != 31) {
+        return false;
+    }
+
+    if (inst.wback) {
+        flags_.StoreWriteBack = 1;
+    }
+
+    if (!is_simd_) {
+        const bool signed_ = TestBit<0>(size_);
+        if (signed_) {
+            flags_.StoreImmSigned = 1;
+        }
+    }
+
+    operand_.addr_mode_ = AddressMode(inst.addr_mode);
+
+    operand_.base_ = XREG(inst.Rn);
+
+    if (operand_.addr_mode_ == PostIndex) {
+        flags_.StorePostIndex = 1;
+    }
+
+    const auto scale = 2 + (flags_.StoreFloat ? size_ : Bit<1>((u32)size_));
+    const auto data_size = 8 << scale;
+    const auto dbytes = data_size / 8;
+    operand_.offset_ = SignExtend<s32, 7>(inst.imm7) << scale;
+
+    if (is_simd_) {
+        rt1_ = GeneralRegister::V(data_size, static_cast<u8>(inst.Rt));
+        rt2_ = GeneralRegister::V(data_size, static_cast<u8>(inst.Rt2));
+    } else {
+        rt1_ = GeneralRegister::X(data_size, static_cast<u8>(inst.Rt));
+        rt2_ = GeneralRegister::X(data_size, static_cast<u8>(inst.Rt2));
+    }
+
+    return true;
+}
+
+bool InstrA64StoreRegPair::Assemble() {
+    return true;
+}
+
+
+//
+InstrA64LoadRegPair::InstrA64LoadRegPair() {
+
+}
+
+bool InstrA64LoadRegPair::Disassemble(AArch64Inst &inst) {
+    InstrA64LoadAndStore::Disassemble(inst);
+    return true;
+}
+
+bool InstrA64LoadRegPair::Assemble() {
+    return InstructionA64::Assemble();
+}

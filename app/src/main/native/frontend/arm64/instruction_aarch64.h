@@ -10,8 +10,7 @@
 #include "instruction_table.h"
 #include "cpu_arm64.h"
 
-namespace Instruction {
-    namespace A64 {
+namespace Instruction::A64 {
 
 #define DECODE_OFFSET(val, bits, ext) offset_ = SignExtend<s32, (bits + ext)>(val << ext)
 #define ENCODE_OFFSET(bits, ext) TruncateSTo<bits>(GetOffset() >> ext)
@@ -19,427 +18,457 @@ namespace Instruction {
 #define PAGE_OFFSET 12
 #define A64_PAGE_SIZE (2 << PAGE_OFFSET)
 
-        const unsigned kWRegSize = 32;
-        const unsigned kXRegSize = 64;
-        const u64 kWRegMask = UINT64_C(0xffffffff);
-        const u64 kXRegMask = UINT64_C(0xffffffffffffffff);
+    const unsigned kWRegSize = 32;
+    const unsigned kXRegSize = 64;
+    const u64 kWRegMask = UINT64_C(0xffffffff);
+    const u64 kXRegMask = UINT64_C(0xffffffffffffffff);
 
-        class InstructionA64 : public Instruction<AArch64Inst> {
-        public:
-            InstructionA64();
+    class InstructionA64 : public Instruction<AArch64Inst> {
+    public:
+        InstructionA64();
 
-            void SetOpcode(OpcodeA64 opcode);
+        void SetOpcode(OpcodeA64 opcode);
 
-            OpcodeA64 GetOpcode();
+        OpcodeA64 GetOpcode();
 
-            bool Invalid();
+        bool Invalid();
 
-            bool Disassemble(AArch64Inst &t) override;
+        bool Disassemble(AArch64Inst &t) override;
 
-            bool Assemble() override;
+        bool Assemble() override;
 
-            virtual InstrTypeA64 TypeOfA64() const {
-                return InstrTypeA64::Invalid;
-            };
-
-        protected:
-            AArch64Inst backup_;
+        virtual InstrTypeA64 TypeOfA64() const {
+            return InstrTypeA64::Invalid;
         };
 
-        using InstrA64Ref = SharedPtr<InstructionA64>;
+    protected:
+        AArch64Inst backup_;
+    };
+
+    using InstrA64Ref = SharedPtr<InstructionA64>;
 
 
-        class InstrA64Branch : public InstructionA64 {
-        public:
+    class InstrA64Branch : public InstructionA64 {
+    public:
 
-            InstrA64Branch();
+        InstrA64Branch();
 
-            Condition GetCond() const;
+        Condition GetCond() const;
 
-            void SetCond(Condition cond);
+        void SetCond(Condition cond);
 
-            bool HasCond() const;
+        bool HasCond() const;
 
-            VAddr GetTarget() const;
+        VAddr GetTarget() const;
 
-            void SetTarget(VAddr target);
+        void SetTarget(VAddr target);
 
-            s32 GetOffset() const;
+        s32 GetOffset() const;
 
-            void SetOffset(s32 offset);
+        void SetOffset(s32 offset);
 
-            GeneralRegister &GetRt();
+        GeneralRegister &GetRt();
 
-            void SetRt(GeneralRegister rt);
+        void SetRt(GeneralRegister rt);
 
-            GeneralRegister &GetRn();
+        GeneralRegister &GetRn();
 
-            void SetRn(GeneralRegister rn);
+        void SetRn(GeneralRegister rn);
 
-            bool IsAbs() const;
+        bool IsAbs() const;
 
-            bool IsLink() const;
+        bool IsLink() const;
 
-            void SetLink(bool link);
+        void SetLink(bool link);
 
-            InstrTypeA64 TypeOfA64() const override {
-                return InstrTypeA64::Branches;
-            };
-
-            bool Disassemble(AArch64Inst &t) override;
-
-            bool Assemble() override;
-
-        protected:
-            Condition cond_{AL};
-            bool is_abs_ = true;
-            bool link_ = false;
-            s32 offset_;
-            VAddr target_;
-            GeneralRegister rt_;
-            GeneralRegister rn_;
+        InstrTypeA64 TypeOfA64() const override {
+            return InstrTypeA64::Branches;
         };
 
-        class InstrA64ExpGen : public InstructionA64 {
-        public:
+        bool Disassemble(AArch64Inst &t) override;
 
-            InstrA64ExpGen();
+        bool Assemble() override;
 
-            u16 GetImm() const;
+    protected:
+        Condition cond_{AL};
+        bool is_abs_ = true;
+        bool link_ = false;
+        s32 offset_;
+        VAddr target_;
+        GeneralRegister rt_;
+        GeneralRegister rn_;
+    };
 
-            void SetImm(u16 imm);
+    class InstrA64ExpGen : public InstructionA64 {
+    public:
 
-            InstrTypeA64 TypeOfA64() const override {
-                return InstrTypeA64::ExpGen;
-            };
+        InstrA64ExpGen();
 
-            bool Disassemble(AArch64Inst &t) override;
+        u16 GetImm() const;
 
-            bool Assemble() override;
+        void SetImm(u16 imm);
 
-            bool Excutable(ExceptionLevel cur_level);
-
-        protected:
-            ExceptionLevel to_exception_level_;
-            u16 imm_;
+        InstrTypeA64 TypeOfA64() const override {
+            return InstrTypeA64::ExpGen;
         };
 
+        bool Disassemble(AArch64Inst &t) override;
 
-        class InstrA64System : public InstructionA64 {
-        public:
-            InstrA64System();
+        bool Assemble() override;
 
-            const SystemRegister &GetSystemRegister() const;
+        bool Excutable(ExceptionLevel cur_level);
 
-            void SetSystemRegister(const SystemRegister &systemRegister);
+    protected:
+        ExceptionLevel to_exception_level_;
+        u16 imm_;
+    };
 
-            GeneralRegister &GetRt();
 
-            void SetRt(GeneralRegister rt);
+    class InstrA64System : public InstructionA64 {
+    public:
+        InstrA64System();
 
-            InstrTypeA64 TypeOfA64() const override {
-                return InstrTypeA64::System;
-            };
+        const SystemRegister &GetSystemRegister() const;
 
-            bool Disassemble(AArch64Inst &t) override;
+        void SetSystemRegister(const SystemRegister &systemRegister);
 
-            bool Assemble() override;
+        GeneralRegister &GetRt();
 
-        protected:
-            SystemRegister system_register_{};
-            GeneralRegister rt_;
+        void SetRt(GeneralRegister rt);
+
+        InstrTypeA64 TypeOfA64() const override {
+            return InstrTypeA64::System;
         };
 
-        class InstrA64PCRelAddr : public InstructionA64 {
-        public:
+        bool Disassemble(AArch64Inst &t) override;
 
-            InstrA64PCRelAddr();
+        bool Assemble() override;
 
-            s32 GetOffset() const;
+    protected:
+        SystemRegister system_register_{};
+        GeneralRegister rt_;
+    };
 
-            void SetOffset(s32 offset);
+    class InstrA64PCRelAddr : public InstructionA64 {
+    public:
 
-            VAddr GetTarget();
+        InstrA64PCRelAddr();
 
-            bool PageAlign() const;
+        s32 GetOffset() const;
 
-            InstrTypeA64 TypeOfA64() const override {
-                return InstrTypeA64::PCRelAdr;
-            };
+        void SetOffset(s32 offset);
 
-            bool Disassemble(AArch64Inst &t) override;
+        VAddr GetTarget();
 
-            bool Assemble() override;
+        bool PageAlign() const;
 
-        private:
-            s64 offset_;
-            bool page_align_ = false;
+        InstrTypeA64 TypeOfA64() const override {
+            return InstrTypeA64::PCRelAdr;
         };
 
-        class InstrA64AddSubImm : public InstructionA64 {
-        public:
+        bool Disassemble(AArch64Inst &t) override;
 
-            InstrA64AddSubImm();
+        bool Assemble() override;
 
-            GeneralRegister& GetRd();
+    private:
+        s64 offset_;
+        bool page_align_ = false;
+    };
 
-            void SetRd(GeneralRegister rd);
+    class InstrA64AddSubImm : public InstructionA64 {
+    public:
 
-            const Operand &GetOperand() const;
+        InstrA64AddSubImm();
 
-            void SetOperand(const Operand &operand);
+        GeneralRegister &GetRd();
 
-            bool IsSub() const;
+        void SetRd(GeneralRegister rd);
 
-            bool IsUpdateFlag() const;
+        const Operand &GetOperand() const;
 
-            bool Is64Bit() const;
+        void SetOperand(const Operand &operand);
 
-            InstrTypeA64 TypeOfA64() const override {
-                return InstrTypeA64::AddSubImmediate;
-            };
+        bool IsSub() const;
 
-            bool Disassemble(AArch64Inst &t) override;
+        bool IsUpdateFlag() const;
 
-            bool Assemble() override;
+        bool Is64Bit() const;
 
-        private:
-            bool is_sub_ = false;
-            bool update_flag_ = false;
-            bool is_64bit = false;
-            bool shift_ = false;
-            GeneralRegister rd_;
-            Operand operand_;
+        InstrTypeA64 TypeOfA64() const override {
+            return InstrTypeA64::AddSubImmediate;
         };
 
-        class InstrA64MovWide : public InstructionA64 {
-        public:
+        bool Disassemble(AArch64Inst &t) override;
 
-            enum Shift : u8 {
-                Shift0 = 0,
-                Shift1 = 16,
-                Shift2 = 32,
-                Shift3 = 48
-            };
+        bool Assemble() override;
 
-            InstrA64MovWide();
+    private:
+        bool is_sub_ = false;
+        bool update_flag_ = false;
+        bool is_64bit = false;
+        bool shift_ = false;
+        GeneralRegister rd_;
+        Operand operand_;
+    };
 
-            GeneralRegister &GetRd();
+    class InstrA64MovWide : public InstructionA64 {
+    public:
 
-            void SetRd(GeneralRegister &rd);
-
-            u16 GetImm() const;
-
-            void SetImm(u16 imm);
-
-            Shift GetShift() const;
-
-            void SetShift(Shift shift);
-
-            u64 GetValue(u64 old_value);
-
-            InstrTypeA64 TypeOfA64() const override {
-                return InstrTypeA64::MovWide;
-            };
-
-            bool Disassemble(AArch64Inst &t) override;
-
-            bool Assemble() override;
-
-        private:
-            GeneralRegister rd_;
-            u16 imm_;
-            Shift shift_;
+        enum Shift : u8 {
+            Shift0 = 0,
+            Shift1 = 16,
+            Shift2 = 32,
+            Shift3 = 48
         };
 
+        InstrA64MovWide();
 
-        class InstrA64LogicalImm : public InstructionA64 {
-        public:
+        GeneralRegister &GetRd();
 
-            InstrA64LogicalImm();
+        void SetRd(GeneralRegister &rd);
 
-            InstrTypeA64 TypeOfA64() const override {
-                return InstrTypeA64::LogicalImmediate;
-            };
+        u16 GetImm() const;
 
-            const GeneralRegister &GetRd() const;
+        void SetImm(u16 imm);
 
-            void SetRd(const GeneralRegister &rd);
+        Shift GetShift() const;
 
-            u64 GetImm() const;
+        void SetShift(Shift shift);
 
-            void SetImm(u64 imm);
+        u64 GetValue(u64 old_value);
 
-            bool IsUpdateFlags() const;
-
-            bool Disassemble(AArch64Inst &t) override;
-
-            bool Assemble() override;
-
-        private:
-            bool update_flags_;
-            GeneralRegister rd_;
-            u64 imm_;
+        InstrTypeA64 TypeOfA64() const override {
+            return InstrTypeA64::MovWide;
         };
 
+        bool Disassemble(AArch64Inst &t) override;
 
-        class InstrA64BitField : public InstructionA64 {
-        public:
-            InstrA64BitField();
+        bool Assemble() override;
 
-            InstrTypeA64 TypeOfA64() const override {
-                return InstrTypeA64::BitField;
-            };
+    private:
+        GeneralRegister rd_;
+        u16 imm_;
+        Shift shift_;
+    };
 
-            const GeneralRegister &GetRd() const;
 
-            void SetRd(const GeneralRegister &rd);
+    class InstrA64LogicalImm : public InstructionA64 {
+    public:
 
-            const GeneralRegister &GetRn() const;
+        InstrA64LogicalImm();
 
-            void SetRn(const GeneralRegister &rn);
-
-            int GetS() const;
-
-            void SetS(int s);
-
-            int GetR() const;
-
-            void SetR(int r);
-
-            bool Disassemble(AArch64Inst &t) override;
-
-            bool Assemble() override;
-
-            u64 GetResult(u64 src, u64 dest);
-
-        private:
-            GeneralRegister rd_, rn_;
-            int S, R;
-            u64 top_bits_;
-            u64 mask_;
-            bool extend_ = false;
-            bool inzero_ = false;
+        InstrTypeA64 TypeOfA64() const override {
+            return InstrTypeA64::LogicalImmediate;
         };
 
+        const GeneralRegister &GetRd() const;
 
-        class InstrA64Extract : public InstructionA64 {
-        public:
-            InstrA64Extract();
+        void SetRd(const GeneralRegister &rd);
 
-            InstrTypeA64 TypeOfA64() const override {
-                return InstrTypeA64::Extract;
-            };
+        u64 GetImm() const;
+
+        void SetImm(u64 imm);
+
+        bool IsUpdateFlags() const;
+
+        bool Disassemble(AArch64Inst &t) override;
+
+        bool Assemble() override;
+
+    private:
+        bool update_flags_;
+        GeneralRegister rd_;
+        u64 imm_;
+    };
+
+
+    class InstrA64BitField : public InstructionA64 {
+    public:
+        InstrA64BitField();
+
+        InstrTypeA64 TypeOfA64() const override {
+            return InstrTypeA64::BitField;
         };
 
+        const GeneralRegister &GetRd() const;
 
-        class InstrA64LoadAndStore : public InstructionA64 {
-        public:
+        void SetRd(const GeneralRegister &rd);
 
-            struct StoreFlags {
-                //update Rn
-                u8 StoreWriteBack:1;
-                //use updated Rn
-                u8 StorePostIndex:1;
-                u8 StoreImmSigned:1;
-                u8 StoreFloat:1;
-                u8 Store128BitFloat:1;
-                u8 StoreRelease:1;
-                u8 StoreExclusive:1;
-            };
+        const GeneralRegister &GetRn() const;
 
-            struct LoadFlags {
-                u16 LoadWriteBack:1;
-                u16 LoadImmSigned:1;
-                u16 LoadPostIndex:1;
-                u16 LoadExtendResult:1;
-                u16 LoadExtendTo64:1;
-                u16 LoadFloat:1;
-                u16 Load128BitFloat:1;
-                u16 LoadAcquire:1;
-                u16 LoadExclusive:1;
-            };
+        void SetRn(const GeneralRegister &rn);
 
-            enum Size : u8 {
-                Size8 = 0,
-                Size16,
-                Size32,
-                Size64
-            };
+        int GetS() const;
 
-            bool Disassemble(AArch64Inst &t) override;
+        void SetS(int s);
 
-        protected:
-            Size size_;
-            bool is_simd_;
+        int GetR() const;
+
+        void SetR(int r);
+
+        bool Disassemble(AArch64Inst &t) override;
+
+        bool Assemble() override;
+
+        u64 GetResult(u64 src, u64 dest);
+
+    private:
+        GeneralRegister rd_, rn_;
+        int S, R;
+        u64 top_bits_;
+        u64 mask_;
+        bool extend_ = false;
+        bool inzero_ = false;
+    };
+
+
+    class InstrA64Extract : public InstructionA64 {
+    public:
+        InstrA64Extract();
+
+        InstrTypeA64 TypeOfA64() const override {
+            return InstrTypeA64::Extract;
+        };
+    };
+
+
+    class InstrA64LoadAndStore : public InstructionA64 {
+    public:
+
+        struct StoreFlags {
+            //update Rn
+            u8 StoreWriteBack:1;
+            //use updated Rn
+            u8 StorePostIndex:1;
+            u8 StoreImmSigned:1;
+            u8 StoreFloat:1;
+            u8 Store128BitFloat:1;
+            u8 StoreRelease:1;
+            u8 StoreExclusive:1;
         };
 
-
-        class InstrA64StoreRegImm : public InstrA64LoadAndStore {
-        public:
-
-            InstrA64StoreRegImm() {}
-
-            InstrTypeA64 TypeOfA64() const override {
-                return InstrTypeA64::StoreRegImm;
-            }
-
-            bool ShouldUpdateRn();
-
-            StoreFlags &GetFlags();
-
-            bool Disassemble(AArch64Inst &t) override;
-
-            bool Assemble() override;
-
-        private:
-            StoreFlags flags_ {0} ;
-            MemOperand operand_{};
-            GeneralRegister rt_;
+        struct LoadFlags {
+            u16 LoadWriteBack:1;
+            u16 LoadImmSigned:1;
+            u16 LoadPostIndex:1;
+            u16 LoadExtendResult:1;
+            u16 LoadExtendTo64:1;
+            u16 LoadFloat:1;
+            u16 Load128BitFloat:1;
+            u16 LoadAcquire:1;
+            u16 LoadExclusive:1;
         };
 
-        class InstrA64LoadRegImm : public InstrA64LoadAndStore {
-        public:
-
-            InstrTypeA64 TypeOfA64() const override {
-                return InstrTypeA64::LoadRegImm;
-            };
-
-            bool Assemble() override;
-
-            bool Disassemble(AArch64Inst &t) override;
-
-        private:
-            LoadFlags flags_ {0};
-            MemOperand operand_;
-            GeneralRegister rd_;
+        enum Size : u8 {
+            Size8 = 0,
+            Size16,
+            Size32,
+            Size64
         };
 
-        class InstrA64LoadLiteral : public InstructionA64 {
-        public:
+        bool Disassemble(AArch64Inst &t) override;
 
-            InstrA64LoadLiteral();
+    protected:
+        Size size_;
+        bool is_simd_;
+    };
 
-            InstrTypeA64 TypeOfA64() const override {
-                return InstrTypeA64::LoadLiteral;
-            };
 
-            const GeneralRegister &GetRt() const;
+    class InstrA64StoreRegImm : public InstrA64LoadAndStore {
+    public:
 
-            void SetRt(const GeneralRegister &rt);
+        InstrA64StoreRegImm() {}
 
-            s32 GetOffset() const;
+        InstrTypeA64 TypeOfA64() const override {
+            return InstrTypeA64::StoreRegImm;
+        }
 
-            void SetOffset(s32 offset);
+        bool ShouldUpdateRn();
 
-            bool Disassemble(AArch64Inst &t) override;
+        StoreFlags &GetFlags();
 
-            bool Assemble() override;
+        bool Disassemble(AArch64Inst &t) override;
 
-        private:
-            GeneralRegister rt_;
-            s32 offset_;
+        bool Assemble() override;
+
+    private:
+        StoreFlags flags_{0};
+        MemOperand operand_{};
+        GeneralRegister rt_;
+    };
+
+    class InstrA64LoadRegImm : public InstrA64LoadAndStore {
+    public:
+
+        InstrTypeA64 TypeOfA64() const override {
+            return InstrTypeA64::LoadRegImm;
         };
 
-    }
+        bool Assemble() override;
+
+        bool Disassemble(AArch64Inst &t) override;
+
+    private:
+        LoadFlags flags_{0};
+        MemOperand operand_;
+        GeneralRegister rd_;
+    };
+
+    class InstrA64LoadLiteral : public InstructionA64 {
+    public:
+
+        InstrA64LoadLiteral();
+
+        InstrTypeA64 TypeOfA64() const override {
+            return InstrTypeA64::LoadLiteral;
+        };
+
+        const GeneralRegister &GetRt() const;
+
+        void SetRt(const GeneralRegister &rt);
+
+        s32 GetOffset() const;
+
+        void SetOffset(s32 offset);
+
+        bool Disassemble(AArch64Inst &t) override;
+
+        bool Assemble() override;
+
+    private:
+        GeneralRegister rt_;
+        s32 offset_;
+    };
+
+    class InstrA64StoreRegPair : public InstrA64LoadAndStore {
+    public:
+
+        InstrA64StoreRegPair();
+
+        bool Disassemble(AArch64Inst &t) override;
+
+        bool Assemble() override;
+
+    private:
+        GeneralRegister rt1_, rt2_;
+        StoreFlags flags_{0};
+        MemOperand operand_;
+    };
+
+
+    class InstrA64LoadRegPair : public InstrA64LoadAndStore {
+    public:
+
+        InstrA64LoadRegPair();
+
+        bool Disassemble(AArch64Inst &inst) override;
+
+        bool Assemble() override;
+
+    private:
+        GeneralRegister rd1_, rd2_;
+        LoadFlags flags_{0};
+        MemOperand operand_;
+    };
+
 }

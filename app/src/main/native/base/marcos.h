@@ -120,6 +120,11 @@ constexpr T BitRange(T val) {
     return (val >> start) & Bitmask<end - start + 1, T>();
 }
 
+template<size_t bit, typename T>
+constexpr T Bit(T val) {
+    return (val >> bit) & Bitmask<1, T>();
+}
+
 template <typename T>
 constexpr T SignExtendX(u8 size, T val) {
     T mask = (T(2) << (size - 1)) - T(1);

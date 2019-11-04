@@ -4,8 +4,6 @@
 
 #pragma once
 
-namespace Assembler {
-    namespace A64 {
+namespace Assembler::A64 {
 
-    }
 }

@@ -22,7 +22,7 @@ add_library(virtual_arm SHARED
         frontend/arm64/cpu_arm64.cc
         frontend/ir/opcode_ir.cc
         frontend/ir/argument_ir.cc
-        frontend/ir/instructions_ir.cc
+        frontend/ir/instruction_ir.cc
         frontend/ir/block_ir.cc
         frontend/ir/assembler_ir.cc
         frontend/arm64/assembler_a64.cc

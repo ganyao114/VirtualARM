@@ -52,6 +52,7 @@ FIELD(size, 30, 31);
 FIELD(is_simd, 26, 26);
 FIELD(ldrstr_opc, 22, 23);
 FIELD(addr_mode, 10, 11);
+FIELD(wback, 23, 23);
 
 FIELD(_5_11, 5, 11);
 FIELD(_5_18, 5, 18);
@@ -84,6 +85,7 @@ FIELD(immhi, 5, 23); // high portion of immediate for PC-rel. addressing
 FIELD(imms, 10, 15); // part of immediate for DPImm operations
 FIELD(immr, 16, 21); // part of immediate for DPImm operations
 FIELD(imm16, 5, 20); // u16 immediate
+FIELD(imm7, 15, 21); // u16 immediate
 FIELD(imm8, 13, 20); // u16 immediate
 FIELD(imm9, 12, 20); // u16 immediate
 FIELD(N, 22, 22); // part of immediate for DPImm operations

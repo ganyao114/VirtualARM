@@ -42,3 +42,25 @@ GeneralRegister::GeneralRegister(VReg vreg) : vreg_(vreg) {
 GeneralRegister::GeneralRegister(QReg qreg) : qreg_(qreg) {
     type_ = Type::Q;
 }
+
+GeneralRegister::GeneralRegister(DReg dreg) : dreg_(dreg) {
+    type_ = Type::D;
+}
+
+GeneralRegister GeneralRegister::X(u32 data_size, u8 code) {
+    if (data_size <= 32) {
+        return WREG(code);
+    } else {
+        return XREG(code);
+    }
+}
+
+GeneralRegister GeneralRegister::V(u32 data_size, u8 code) {
+    if (data_size <= 32) {
+        return QREG(code);
+    } else if (data_size <= 64) {
+        return DREG(code);
+    } else {
+        return VREG(code);
+    }
+}
