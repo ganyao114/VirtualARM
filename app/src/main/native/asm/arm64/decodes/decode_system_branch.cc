@@ -2,7 +2,7 @@
 // Created by 甘尧 on 2019-09-25.
 //
 
-#include "frontend/arm64/instruction_decode.h"
+#include "asm/arm64/instruction_decode.h"
 
 using namespace Instruction::A64;
 

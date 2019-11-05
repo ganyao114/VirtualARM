@@ -4,15 +4,20 @@
 
 #include <jni.h>
 #include "virtual_arm.h"
-#include "frontend/arm64/instruction_decode.h"
+#include "asm/arm64/instruction_decode.h"
+#include "frontend/ir/instruction_ir.h"
+
 
 using namespace Instruction::A64;
+using namespace Instruction::IR;
+
 
 extern "C"
 JNIEXPORT void JNICALL
 load_test(JNIEnv *env, jobject instance) {
     FastBranchDecoder decoder;
-    InstrA64Ref instr = decoder.Decode(reinterpret_cast<InstrA64 *>((VAddr)rename + 24));
+//    InstrA64Ref instr = decoder.Decode(reinterpret_cast<InstrA64 *>((VAddr)rename + 24));
+    assert(sizeof(Argument) == sizeof(Imm128));
 }
 
 static bool registerNativeMethods(JNIEnv *env, const char *className, JNINativeMethod *jniMethods, int methods) {

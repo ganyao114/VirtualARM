@@ -12,20 +12,21 @@ add_library(virtual_arm SHARED
         virtual_arm.cc
         base/marcos.cc
         instruction/instruction.cc
-        frontend/arm64/instruction_fields.cc
-        frontend/arm64/instruction_aarch64.cc
-        frontend/arm64/instruction_table.cc
-        frontend/arm64/instruction_decode.cc
-        frontend/arm64/decodes/decode_system_branch.cc
-        frontend/arm64/decodes/decode_data_process_imm.cc
-        frontend/arm64/decodes/decode_load_and_store.cc
-        frontend/arm64/cpu_arm64.cc
+        asm/arm64/instruction_fields.cc
+        asm/arm64/instruction_aarch64.cc
+        asm/arm64/instruction_table.cc
+        asm/arm64/instruction_decode.cc
+        asm/arm64/decodes/decode_system_branch.cc
+        asm/arm64/decodes/decode_data_process_imm.cc
+        asm/arm64/decodes/decode_load_and_store.cc
+        asm/arm64/cpu_arm64.cc
         frontend/ir/opcode_ir.cc
         frontend/ir/argument_ir.cc
         frontend/ir/instruction_ir.cc
         frontend/ir/block_ir.cc
         frontend/ir/assembler_ir.cc
-        frontend/arm64/assembler_a64.cc
+        frontend/arm64/ir_adapter_a64.cc
+        asm/arm64/assembler_a64.cc
         backend/arm64/trampoline_a64.cc
         backend/arm64/trampoline.S
         block/code_block.cc

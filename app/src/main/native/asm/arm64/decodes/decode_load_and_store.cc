@@ -2,7 +2,7 @@
 // Created by 甘尧 on 2019-10-15.
 //
 
-#include "frontend/arm64/instruction_decode.h"
+#include "asm/arm64/instruction_decode.h"
 
 using namespace Instruction::A64;
 
@@ -94,7 +94,7 @@ InstrA64Ref DecodeLoadRegLiteral(AArch64Inst &instr) {
     auto opc = BitRange<30, 31>(instr.raw);
 
     SharedPtr<InstrA64LoadLiteral> instruction(new InstrA64LoadLiteral());
-    if (instr.is_simd == 1) {
+    if (instr.is_simd) {
         //LDR_lit_fpsimd
         instruction->SetOpcode(OpcodeA64::LDR_lit_fpsimd);
     } else {
