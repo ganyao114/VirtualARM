@@ -140,19 +140,19 @@ bool InstrA64Branch::Assemble() {
     return true;
 }
 
-GeneralRegister &InstrA64Branch::GetRt() {
+A64Register &InstrA64Branch::GetRt() {
     return rt_;
 }
 
-void InstrA64Branch::SetRt(GeneralRegister rt) {
+void InstrA64Branch::SetRt(A64Register rt) {
     rt_ = rt;
 }
 
-GeneralRegister &InstrA64Branch::GetRn() {
+A64Register &InstrA64Branch::GetRn() {
     return rn_;
 }
 
-void InstrA64Branch::SetRn(GeneralRegister rn) {
+void InstrA64Branch::SetRn(A64Register rn) {
     rn_ = rn;
 }
 
@@ -210,11 +210,11 @@ void InstrA64System::SetSystemRegister(const SystemRegister &systemRegister) {
     system_register_ = systemRegister;
 }
 
-GeneralRegister &InstrA64System::GetRt() {
+A64Register &InstrA64System::GetRt() {
     return rt_;
 }
 
-void InstrA64System::SetRt(GeneralRegister rt) {
+void InstrA64System::SetRt(A64Register rt) {
     rt_ = rt;
 }
 
@@ -334,11 +334,11 @@ bool InstrA64AddSubImm::Is64Bit() const {
     return is_64bit;
 }
 
-GeneralRegister &InstrA64AddSubImm::GetRd() {
+A64Register &InstrA64AddSubImm::GetRd() {
     return rd_;
 }
 
-void InstrA64AddSubImm::SetRd(GeneralRegister rd) {
+void InstrA64AddSubImm::SetRd(A64Register rd) {
     rd_ = rd;
 }
 
@@ -354,11 +354,11 @@ void InstrA64AddSubImm::SetOperand(const Operand &operand) {
 //Mov Wide
 InstrA64MovWide::InstrA64MovWide() {}
 
-GeneralRegister &InstrA64MovWide::GetRd() {
+A64Register &InstrA64MovWide::GetRd() {
     return rd_;
 }
 
-void InstrA64MovWide::SetRd(GeneralRegister &rd) {
+void InstrA64MovWide::SetRd(A64Register &rd) {
     rd_ = rd;
 }
 
@@ -553,11 +553,11 @@ bool InstrA64LogicalImm::Assemble() {
     }
 }
 
-const GeneralRegister &InstrA64LogicalImm::GetRd() const {
+const A64Register &InstrA64LogicalImm::GetRd() const {
     return rd_;
 }
 
-void InstrA64LogicalImm::SetRd(const GeneralRegister &rd) {
+void InstrA64LogicalImm::SetRd(const A64Register &rd) {
     rd_ = rd;
 }
 
@@ -579,19 +579,19 @@ InstrA64BitField::InstrA64BitField() {
 
 }
 
-const GeneralRegister &InstrA64BitField::GetRd() const {
+const A64Register &InstrA64BitField::GetRd() const {
     return rd_;
 }
 
-void InstrA64BitField::SetRd(const GeneralRegister &rd) {
+void InstrA64BitField::SetRd(const A64Register &rd) {
     rd_ = rd;
 }
 
-const GeneralRegister &InstrA64BitField::GetRn() const {
+const A64Register &InstrA64BitField::GetRn() const {
     return rn_;
 }
 
-void InstrA64BitField::SetRn(const GeneralRegister &rn) {
+void InstrA64BitField::SetRn(const A64Register &rn) {
     rn_ = rn;
 }
 
@@ -788,11 +788,11 @@ bool InstrA64LoadLiteral::Assemble() {
     return true;
 }
 
-const GeneralRegister &InstrA64LoadLiteral::GetRt() const {
+const A64Register &InstrA64LoadLiteral::GetRt() const {
     return rt_;
 }
 
-void InstrA64LoadLiteral::SetRt(const GeneralRegister &rt) {
+void InstrA64LoadLiteral::SetRt(const A64Register &rt) {
     rt_ = rt;
 }
 
@@ -854,11 +854,11 @@ bool InstrA64StoreRegPair::Disassemble(AArch64Inst &inst) {
     operand_.offset_ = SignExtend<s32, 7>(inst.imm7) << scale;
 
     if (is_simd_) {
-        rt1_ = GeneralRegister::V(data_size, static_cast<u8>(inst.Rt));
-        rt2_ = GeneralRegister::V(data_size, static_cast<u8>(inst.Rt2));
+        rt1_ = A64Register::V(data_size, static_cast<u8>(inst.Rt));
+        rt2_ = A64Register::V(data_size, static_cast<u8>(inst.Rt2));
     } else {
-        rt1_ = GeneralRegister::X(data_size, static_cast<u8>(inst.Rt));
-        rt2_ = GeneralRegister::X(data_size, static_cast<u8>(inst.Rt2));
+        rt1_ = A64Register::X(data_size, static_cast<u8>(inst.Rt));
+        rt2_ = A64Register::X(data_size, static_cast<u8>(inst.Rt2));
     }
 
     return true;

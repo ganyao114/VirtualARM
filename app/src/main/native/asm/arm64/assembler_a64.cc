@@ -3,3 +3,11 @@
 //
 
 #include "assembler_a64.h"
+
+using namespace Assembler::A64;
+
+void AssemblerA64::B_cond(Cond &a1, Offset &a2) {
+
+}
+
+

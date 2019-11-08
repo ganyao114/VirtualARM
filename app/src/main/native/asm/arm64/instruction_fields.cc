@@ -23,31 +23,31 @@ SystemRegister::SystemRegister(u16 value) {
     this->value.value = value;
 }
 
-GeneralRegister::GeneralRegister() {
+A64Register::A64Register() {
     type_ = Type::U;
 }
 
-GeneralRegister::GeneralRegister(XReg xreg) : xreg_(xreg) {
+A64Register::A64Register(XReg xreg) : xreg_(xreg) {
     type_ = Type::X;
 }
 
-GeneralRegister::GeneralRegister(WReg wreg) : wreg_(wreg) {
+A64Register::A64Register(WReg wreg) : wreg_(wreg) {
     type_ = Type::W;
 }
 
-GeneralRegister::GeneralRegister(VReg vreg) : vreg_(vreg) {
+A64Register::A64Register(VReg vreg) : vreg_(vreg) {
     type_ = Type::V;
 }
 
-GeneralRegister::GeneralRegister(QReg qreg) : qreg_(qreg) {
+A64Register::A64Register(QReg qreg) : qreg_(qreg) {
     type_ = Type::Q;
 }
 
-GeneralRegister::GeneralRegister(DReg dreg) : dreg_(dreg) {
+A64Register::A64Register(DReg dreg) : dreg_(dreg) {
     type_ = Type::D;
 }
 
-GeneralRegister GeneralRegister::X(u32 data_size, u8 code) {
+A64Register A64Register::X(u32 data_size, u8 code) {
     if (data_size <= 32) {
         return WREG(code);
     } else {
@@ -55,7 +55,7 @@ GeneralRegister GeneralRegister::X(u32 data_size, u8 code) {
     }
 }
 
-GeneralRegister GeneralRegister::V(u32 data_size, u8 code) {
+A64Register A64Register::V(u32 data_size, u8 code) {
     if (data_size <= 32) {
         return QREG(code);
     } else if (data_size <= 64) {

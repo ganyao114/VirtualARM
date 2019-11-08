@@ -13,20 +13,19 @@ using namespace Code::IR;
 namespace Instruction::IR {
 
     class Assembler {
-
+    public:
         // IR Assembler
-#define INST0(name, ret) ret& Emit##name();
-#define INST1(name, ret, arg1) ret& Emit##name(arg1& a1);
-#define INST2(name, ret, arg1, arg2) ret& Emit##name(arg1& a1, arg2& a2);
+#define INST0(name, ret) ret& name();
+#define INST1(name, ret, arg1) ret& name(arg1& a1);
+#define INST2(name, ret, arg1, arg2) ret& name(arg1& a1, arg2& a2);
 
 #include "opcodes_ir.inl"
 
 #undef INST0
 #undef INST1
 #undef INST2
-
     protected:
-        CodeBlock block_;
+        CodeBlock *block_;
     };
 
 }

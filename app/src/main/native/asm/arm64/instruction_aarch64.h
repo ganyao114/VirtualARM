@@ -67,13 +67,13 @@ namespace Instruction::A64 {
 
         void SetOffset(s32 offset);
 
-        GeneralRegister &GetRt();
+        A64Register &GetRt();
 
-        void SetRt(GeneralRegister rt);
+        void SetRt(A64Register rt);
 
-        GeneralRegister &GetRn();
+        A64Register &GetRn();
 
-        void SetRn(GeneralRegister rn);
+        void SetRn(A64Register rn);
 
         bool IsAbs() const;
 
@@ -95,8 +95,8 @@ namespace Instruction::A64 {
         bool link_ = false;
         s32 offset_;
         VAddr target_;
-        GeneralRegister rt_;
-        GeneralRegister rn_;
+        A64Register rt_;
+        A64Register rn_;
     };
 
     class InstrA64ExpGen : public InstructionA64 {
@@ -132,9 +132,9 @@ namespace Instruction::A64 {
 
         void SetSystemRegister(const SystemRegister &systemRegister);
 
-        GeneralRegister &GetRt();
+        A64Register &GetRt();
 
-        void SetRt(GeneralRegister rt);
+        void SetRt(A64Register rt);
 
         InstrTypeA64 TypeOfA64() const override {
             return InstrTypeA64::System;
@@ -146,7 +146,7 @@ namespace Instruction::A64 {
 
     protected:
         SystemRegister system_register_{};
-        GeneralRegister rt_;
+        A64Register rt_;
     };
 
     class InstrA64PCRelAddr : public InstructionA64 {
@@ -180,9 +180,9 @@ namespace Instruction::A64 {
 
         InstrA64AddSubImm();
 
-        GeneralRegister &GetRd();
+        A64Register &GetRd();
 
-        void SetRd(GeneralRegister rd);
+        void SetRd(A64Register rd);
 
         const Operand &GetOperand() const;
 
@@ -207,7 +207,7 @@ namespace Instruction::A64 {
         bool update_flag_ = false;
         bool is_64bit = false;
         bool shift_ = false;
-        GeneralRegister rd_;
+        A64Register rd_;
         Operand operand_;
     };
 
@@ -223,9 +223,9 @@ namespace Instruction::A64 {
 
         InstrA64MovWide();
 
-        GeneralRegister &GetRd();
+        A64Register &GetRd();
 
-        void SetRd(GeneralRegister &rd);
+        void SetRd(A64Register &rd);
 
         u16 GetImm() const;
 
@@ -246,7 +246,7 @@ namespace Instruction::A64 {
         bool Assemble() override;
 
     private:
-        GeneralRegister rd_;
+        A64Register rd_;
         u16 imm_;
         Shift shift_;
     };
@@ -261,9 +261,9 @@ namespace Instruction::A64 {
             return InstrTypeA64::LogicalImmediate;
         };
 
-        const GeneralRegister &GetRd() const;
+        const A64Register &GetRd() const;
 
-        void SetRd(const GeneralRegister &rd);
+        void SetRd(const A64Register &rd);
 
         u64 GetImm() const;
 
@@ -277,7 +277,7 @@ namespace Instruction::A64 {
 
     private:
         bool update_flags_;
-        GeneralRegister rd_;
+        A64Register rd_;
         u64 imm_;
     };
 
@@ -290,13 +290,13 @@ namespace Instruction::A64 {
             return InstrTypeA64::BitField;
         };
 
-        const GeneralRegister &GetRd() const;
+        const A64Register &GetRd() const;
 
-        void SetRd(const GeneralRegister &rd);
+        void SetRd(const A64Register &rd);
 
-        const GeneralRegister &GetRn() const;
+        const A64Register &GetRn() const;
 
-        void SetRn(const GeneralRegister &rn);
+        void SetRn(const A64Register &rn);
 
         int GetS() const;
 
@@ -313,7 +313,7 @@ namespace Instruction::A64 {
         u64 GetResult(u64 src, u64 dest);
 
     private:
-        GeneralRegister rd_, rn_;
+        A64Register rd_, rn_;
         int S, R;
         u64 top_bits_;
         u64 mask_;
@@ -394,7 +394,7 @@ namespace Instruction::A64 {
     private:
         StoreFlags flags_{0};
         MemOperand operand_{};
-        GeneralRegister rt_;
+        A64Register rt_;
     };
 
     class InstrA64LoadRegImm : public InstrA64LoadAndStore {
@@ -411,7 +411,7 @@ namespace Instruction::A64 {
     private:
         LoadFlags flags_{0};
         MemOperand operand_;
-        GeneralRegister rd_;
+        A64Register rd_;
     };
 
     class InstrA64LoadLiteral : public InstructionA64 {
@@ -423,9 +423,9 @@ namespace Instruction::A64 {
             return InstrTypeA64::LoadLiteral;
         };
 
-        const GeneralRegister &GetRt() const;
+        const A64Register &GetRt() const;
 
-        void SetRt(const GeneralRegister &rt);
+        void SetRt(const A64Register &rt);
 
         s32 GetOffset() const;
 
@@ -436,7 +436,7 @@ namespace Instruction::A64 {
         bool Assemble() override;
 
     private:
-        GeneralRegister rt_;
+        A64Register rt_;
         s32 offset_;
     };
 
@@ -450,7 +450,7 @@ namespace Instruction::A64 {
         bool Assemble() override;
 
     private:
-        GeneralRegister rt1_, rt2_;
+        A64Register rt1_, rt2_;
         StoreFlags flags_{0};
         MemOperand operand_;
     };
@@ -466,7 +466,7 @@ namespace Instruction::A64 {
         bool Assemble() override;
 
     private:
-        GeneralRegister rd1_, rd2_;
+        A64Register rd1_, rd2_;
         LoadFlags flags_{0};
         MemOperand operand_;
     };

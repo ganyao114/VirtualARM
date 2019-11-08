@@ -150,10 +150,6 @@ namespace Instruction::A64 {
 #undef VREG
 
     class A64Register : public CPU::Register {
-
-    };
-
-    class GeneralRegister : public A64Register {
     public:
 
         enum class Type : u8 {
@@ -165,21 +161,21 @@ namespace Instruction::A64 {
             Q
         };
 
-        GeneralRegister();
+        A64Register();
 
-        GeneralRegister(XReg xreg);
+        A64Register(XReg xreg);
 
-        GeneralRegister(WReg wreg);
+        A64Register(WReg wreg);
 
-        GeneralRegister(VReg vreg);
+        A64Register(VReg vreg);
 
-        GeneralRegister(QReg qreg);
+        A64Register(QReg qreg);
 
-        GeneralRegister(DReg dreg);
+        A64Register(DReg dreg);
 
-        static GeneralRegister X(u32 data_size, u8 code);
+        static A64Register X(u32 data_size, u8 code);
 
-        static GeneralRegister V(u32 data_size, u8 code);
+        static A64Register V(u32 data_size, u8 code);
 
         bool InValid() const {
             return type_ == Type::U;
@@ -251,16 +247,40 @@ namespace Instruction::A64 {
         };
     };
 
+    class GeneralRegister : public A64Register {
+    public:
+
+        GeneralRegister() = default;
+
+        GeneralRegister(XReg xreg) : A64Register(xreg) {}
+
+        GeneralRegister(WReg wreg) : A64Register(wreg) {}
+
+    };
+
+    class FPRegister : public A64Register {
+    public:
+
+        FPRegister() = default;
+
+        FPRegister(VReg vreg) : A64Register(vreg) {}
+
+        FPRegister(DReg dreg) : A64Register(dreg) {}
+
+        FPRegister(QReg qreg) : A64Register(qreg) {}
+
+    };
+
 #define XREG(x) GeneralRegister(XReg(x))
 #define WREG(x) GeneralRegister(WReg(x))
-#define VREG(x) GeneralRegister(VReg(x))
-#define QREG(x) GeneralRegister(QReg(x))
-#define DREG(x) GeneralRegister(DReg(x))
-#define UNKNOW_REG GeneralRegister()
+#define VREG(x) FPRegister(VReg(x))
+#define QREG(x) FPRegister(QReg(x))
+#define DREG(x) FPRegister(DReg(x))
+#define UNKNOW_REG A64Register()
 
-    GeneralRegister &X(u32 size_byte, u8 code);
+    A64Register &X(u32 size_byte, u8 code);
 
-    GeneralRegister &V(u32 size_byte, u8 code);
+    A64Register &V(u32 size_byte, u8 code);
 
     class VRegister : public A64Register {
 
@@ -309,11 +329,11 @@ namespace Instruction::A64 {
         inline explicit Operand(s64 imm)
                 : immediate_(imm), shift_(NO_SHIFT), extend_(NO_EXTEND), shift_extend_imm_(0) {}
 
-        inline explicit Operand(GeneralRegister reg, int32_t imm = 0, Shift shift = LSL)
+        inline explicit Operand(A64Register reg, int32_t imm = 0, Shift shift = LSL)
                 : immediate_(0), reg_(reg), shift_(shift), extend_(NO_EXTEND),
                   shift_extend_imm_(imm) {}
 
-        inline explicit Operand(GeneralRegister reg, Extend extend, int32_t imm = 0)
+        inline explicit Operand(A64Register reg, Extend extend, int32_t imm = 0)
                 : immediate_(0), reg_(reg), shift_(NO_SHIFT), extend_(extend),
                   shift_extend_imm_(imm) {}
 
@@ -327,7 +347,7 @@ namespace Instruction::A64 {
 
     public:
         s64 immediate_;
-        GeneralRegister reg_{};
+        A64Register reg_{};
         Shift shift_;
         Extend extend_;
         s32 shift_extend_imm_;
@@ -337,25 +357,25 @@ namespace Instruction::A64 {
     public:
         inline explicit MemOperand() {}
 
-        inline explicit MemOperand(GeneralRegister &base, s32 offset = 0,
+        inline explicit MemOperand(A64Register &base, s32 offset = 0,
                                    AddressMode addr_mode = Offset)
                 : base_(base), reg_offset_(UNKNOW_REG), offset_(offset), addr_mode_(addr_mode),
                   shift_(NO_SHIFT),
                   extend_(NO_EXTEND), shift_extend_imm_(0) {}
 
-        inline explicit MemOperand(GeneralRegister &base, GeneralRegister &reg_offset,
+        inline explicit MemOperand(A64Register &base, A64Register &reg_offset,
                                    Extend extend, unsigned extend_imm)
                 : base_(base), reg_offset_(reg_offset), offset_(0), addr_mode_(Offset),
                   shift_(NO_SHIFT), extend_(extend),
                   shift_extend_imm_(extend_imm) {}
 
-        inline explicit MemOperand(GeneralRegister base, GeneralRegister &reg_offset,
+        inline explicit MemOperand(A64Register base, A64Register &reg_offset,
                                    Shift shift = LSL, unsigned shift_imm = 0)
                 : base_(base), reg_offset_(reg_offset), offset_(0), addr_mode_(Offset),
                   shift_(shift), extend_(NO_EXTEND),
                   shift_extend_imm_(shift_imm) {}
 
-        inline explicit MemOperand(GeneralRegister &base, const Operand &offset,
+        inline explicit MemOperand(A64Register &base, const Operand &offset,
                                    AddressMode addr_mode = Offset)
                 : base_(base), reg_offset_(UNKNOW_REG), addr_mode_(addr_mode) {
             if (offset.IsShiftedRegister()) {
@@ -386,8 +406,8 @@ namespace Instruction::A64 {
         bool IsPostIndex() const { return addr_mode_ == PostIndex; }
 
     public:
-        GeneralRegister base_;
-        GeneralRegister reg_offset_;
+        A64Register base_;
+        A64Register reg_offset_;
         s32 offset_;
         AddressMode addr_mode_;
         Shift shift_;

@@ -3,3 +3,5 @@
 //
 
 #include "ir_adapter_a64.h"
+
+using namespace Instruction::A64;
