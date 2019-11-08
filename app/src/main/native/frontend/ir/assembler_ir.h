@@ -6,6 +6,9 @@
 
 
 #include "argument_ir.h"
+#include "block_ir.h"
+
+using namespace Code::IR;
 
 namespace Instruction::IR {
 
@@ -22,6 +25,8 @@ namespace Instruction::IR {
 #undef INST1
 #undef INST2
 
+    protected:
+        CodeBlock block_;
     };
 
 }

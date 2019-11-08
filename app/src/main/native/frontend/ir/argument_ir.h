@@ -32,7 +32,6 @@ namespace Instruction::IR {
 
         Argument() {}
 
-
         explicit Argument(InstrIR *inst) : type_(RegisterFromRet) {
             value_.instr = inst;
         }
@@ -105,15 +104,24 @@ namespace Instruction::IR {
 
     };
 
-    template<DataSize data_size>
     class Return {
     public:
         Return() = default;
 
-        Return(InstrIR *inst) : instr(inst), size_(data_size) {}
+        Return(InstrIR *inst) : instr(inst) {}
 
         DataSize size_;
         InstrIR *instr;
+    };
+
+
+    template<DataSize data_size>
+    class ReturnType : public Return {
+    public:
+        ReturnType() = default;
+        ReturnType(InstrIR *inst) : Return(inst) {
+            size_ = data_size;
+        }
     };
 
 
@@ -126,7 +134,7 @@ namespace Instruction::IR {
             size_ = data_size;
         }
 
-        RegisterIR(Return<data_size> &ret) : Argument(ret.instr) {
+        RegisterIR(ReturnType<data_size> &ret) : Argument(ret.instr) {
             size_ = data_size;
         }
     };
@@ -140,15 +148,15 @@ namespace Instruction::IR {
     };
 
 
-    using RetVoid = Return<DataSize::Void>;
-    using RetU1 = Return<DataSize::U1>;
-    using RetU8 = Return<DataSize::U8>;
-    using RetU16 = Return<DataSize::U16>;
-    using RetU32 = Return<DataSize::U32>;
-    using RetU64 = Return<DataSize::U64>;
-    using RetU128 = Return<DataSize::U128>;
-    using RetU16U32U64 = Return<DataSize::U16 | DataSize::U32 | DataSize::U64>;
-    using RetAny = Return<
+    using RetVoid = ReturnType<DataSize::Void>;
+    using RetU1 = ReturnType<DataSize::U1>;
+    using RetU8 = ReturnType<DataSize::U8>;
+    using RetU16 = ReturnType<DataSize::U16>;
+    using RetU32 = ReturnType<DataSize::U32>;
+    using RetU64 = ReturnType<DataSize::U64>;
+    using RetU128 = ReturnType<DataSize::U128>;
+    using RetU16U32U64 = ReturnType<DataSize::U16 | DataSize::U32 | DataSize::U64>;
+    using RetAny = ReturnType<
             DataSize::U1 | DataSize::U8 | DataSize::U16 | DataSize::U32 | DataSize::U64 |
             DataSize::U128>;
 

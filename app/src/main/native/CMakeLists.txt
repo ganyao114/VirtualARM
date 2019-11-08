@@ -29,6 +29,7 @@ add_library(virtual_arm SHARED
         asm/arm64/assembler_a64.cc
         backend/arm64/trampoline_a64.cc
         backend/arm64/trampoline.S
+        backend/ir/interpreter_ir.cc
         block/code_block.cc
 )
 

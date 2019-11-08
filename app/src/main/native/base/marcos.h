@@ -8,6 +8,7 @@
 #include <mutex>
 #include <array>
 #include "compiler.h"
+#include <boost/smart_ptr/intrusive_ptr.hpp>
 
 using u8 = std::uint8_t;   ///< 8-bit unsigned byte
 using u16 = std::uint16_t; ///< 16-bit unsigned short
@@ -198,8 +199,6 @@ constexpr u64 RotateRight(u64 value,
 
 
 //share ptr
-
-#include <boost/smart_ptr/intrusive_ptr.hpp>
 template<typename T>
 using SharedPtr = boost::intrusive_ptr<T>;
 
