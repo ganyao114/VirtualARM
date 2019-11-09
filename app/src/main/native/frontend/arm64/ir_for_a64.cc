@@ -1,33 +1,32 @@
 //
-// Created by 甘尧 on 2019-10-28.
+// Created by 甘尧 on 2019-11-05.
 //
 
-#include "assembler_ir.h"
+#include "ir_for_a64.h"
 
-using namespace Instruction::IR;
-
+using namespace Instruction::A64;
 
 // IR Assembler
-#define INST0(name, ret) ret& Assembler::name() { \
+#define INST0(name, ret) ret& AssemblerIR::name() { \
     InstrIR &inst = InstrIRPool::Acquire(); \
-    inst.opcode_ = static_cast<u8>(OpcodeIR::name); \
+    inst.opcode_ = static_cast<u8>(OpcodeIRA64::name); \
     ret r(&inst); \
     inst.return_ = r; \
     block_->Emit(inst); \
     return r; \
 }
-#define INST1(name, ret, arg1) ret& Assembler::name(const arg1& a1) { \
+#define INST1(name, ret, arg1) ret& AssemblerIR::name(const arg1& a1) { \
     InstrIR &inst = InstrIRPool::Acquire(); \
-    inst.opcode_ = static_cast<u8>(OpcodeIR::name); \
+    inst.opcode_ = static_cast<u8>(OpcodeIRA64::name); \
     ret r(&inst); \
     inst.return_ = r; \
     inst.SetArg(0, a1); \
     block_->Emit(inst); \
     return r; \
 }
-#define INST2(name, ret, arg1, arg2) ret& Assembler::name(const arg1& a1, const arg2& a2) { \
+#define INST2(name, ret, arg1, arg2) ret& AssemblerIR::name(const arg1& a1, const arg2& a2) { \
     InstrIR &inst = InstrIRPool::Acquire(); \
-    inst.opcode_ = static_cast<u8>(OpcodeIR::name); \
+    inst.opcode_ = static_cast<u8>(OpcodeIRA64::name); \
     ret r(&inst); \
     inst.return_ = r; \
     inst.SetArg(0, a1); \
@@ -36,7 +35,7 @@ using namespace Instruction::IR;
     return r; \
 }
 
-#include "opcodes_ir.inl"
+#include "opcodes_ir_a64.inl"
 
 #undef INST0
 #undef INST1

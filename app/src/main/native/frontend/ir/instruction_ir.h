@@ -24,7 +24,7 @@ namespace Instruction::IR {
 
         void SetArg(int pos, const Argument &argument);
 
-        OpcodeIR opcode_;
+        u8 opcode_;
         u32 use_count = 0;
         std::array<Argument, max_arg_count> args_;
         Return return_;

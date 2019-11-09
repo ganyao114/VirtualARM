@@ -8,7 +8,7 @@ using namespace Backend::IR;
 
 void InterpreterIR::run(void *context, InstrIR &instr) {
     switch (instr.opcode_) {
-        case OpcodeIR::Nop:
+        case static_cast<u8>(OpcodeIR::Nop):
             break;
         default:
             break;

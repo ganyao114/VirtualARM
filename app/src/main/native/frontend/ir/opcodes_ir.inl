@@ -49,10 +49,6 @@ INST1(Ldrx128, RetU128, RegAddr)
 
 
 //STATE
-INST0(GetCarry, RetU1)
-INST0(GetOverflow, RetU1)
-INST0(GetGE, RetU8)
-
-INST1(SetCarry, RetVoid, RegU1)
-INST1(SetOverflow, RetVoid, RegU1)
-INST1(SetGE, RetVoid, RegU8)
+INST1(GetCarry, RetU1, State)
+INST1(GetOverflow, RetU1, State)
+INST1(GetGE, RetU32, State)

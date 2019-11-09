@@ -4,12 +4,14 @@
 
 #pragma once
 
+#include <base/marcos.h>
+
 namespace Instruction::IR {
 #define INST0(x, ...) x,
 #define INST1(x, ...) x,
 #define INST2(x, ...) x,
 #define Type(x)
-    enum class OpcodeIR {
+    enum class OpcodeIR : u8 {
         UN_DECODED,
         INVALID,
 

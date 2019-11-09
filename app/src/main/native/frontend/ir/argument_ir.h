@@ -23,6 +23,7 @@ namespace Instruction::IR {
             Cond,
             RegisterFromRet,
             RegisterFronted,
+            RegisterState,
             StateFromRet,
             Imme,
             RetValue,
@@ -125,6 +126,14 @@ namespace Instruction::IR {
         }
     };
 
+    class State : public Argument {
+    public:
+        State() = default;
+        State(Return &ret) : Argument(ret.instr) {
+            type_ = StateFromRet;
+        }
+    };
+
 
     template<DataSize data_size>
     class RegisterIR : public Argument {
@@ -139,13 +148,10 @@ namespace Instruction::IR {
         RegisterIR(ReturnType<data_size> &ret) : Argument(ret.instr) {
             size_ = data_size;
         }
-    };
 
-    class State : public Argument {
-    public:
-        State() = default;
-        State(Return &ret) : Argument(ret.instr) {
-            type_ = StateFromRet;
+        RegisterIR(State &state) : Argument(state.value_.instr) {
+            size_ = data_size;
+            type_ = RegisterState;
         }
     };
 
