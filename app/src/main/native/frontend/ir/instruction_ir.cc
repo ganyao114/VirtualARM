@@ -10,7 +10,7 @@ InstrIR::InstrIR(OpcodeIR opcode, size_t useCount, const std::array<Argument, ma
 
 }
 
-void InstrIR::SetArg(int pos, Argument &argument) {
+void InstrIR::SetArg(int pos, const Argument &argument) {
     args_[pos] = argument;
 }
 

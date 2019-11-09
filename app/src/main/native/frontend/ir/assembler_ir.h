@@ -16,8 +16,8 @@ namespace Instruction::IR {
     public:
         // IR Assembler
 #define INST0(name, ret) ret& name();
-#define INST1(name, ret, arg1) ret& name(arg1& a1);
-#define INST2(name, ret, arg1, arg2) ret& name(arg1& a1, arg2& a2);
+#define INST1(name, ret, arg1) ret& name(const arg1& a1);
+#define INST2(name, ret, arg1, arg2) ret& name(const arg1& a1, const arg2& a2);
 
 #include "opcodes_ir.inl"
 

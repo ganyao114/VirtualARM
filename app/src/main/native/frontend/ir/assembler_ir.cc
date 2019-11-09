@@ -16,7 +16,7 @@ using namespace Instruction::IR;
     block_->Emit(inst); \
     return r; \
 }
-#define INST1(name, ret, arg1) ret& Assembler::name(arg1& a1) { \
+#define INST1(name, ret, arg1) ret& Assembler::name(const arg1& a1) { \
     InstrIR &inst = InstrIRPool::Acquire(); \
     inst.opcode_ = OpcodeIR::name; \
     ret r(&inst); \
@@ -25,7 +25,7 @@ using namespace Instruction::IR;
     block_->Emit(inst); \
     return r; \
 }
-#define INST2(name, ret, arg1, arg2) ret& Assembler::name(arg1& a1, arg2& a2) { \
+#define INST2(name, ret, arg1, arg2) ret& Assembler::name(const arg1& a1, const arg2& a2) { \
     InstrIR &inst = InstrIRPool::Acquire(); \
     inst.opcode_ = OpcodeIR::name; \
     ret r(&inst); \

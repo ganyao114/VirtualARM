@@ -20,7 +20,7 @@ namespace Instruction::A64 {
     };
 
     enum AddressMode {
-        Offset = 0, PostIndex = 1, PreIndex = 3, NonAddrMode = 2
+        OffsetMode = 0, PostIndex = 1, PreIndex = 3, NonAddrMode = 2
     };
 
     enum Condition {
@@ -358,25 +358,25 @@ namespace Instruction::A64 {
         inline explicit MemOperand() {}
 
         inline explicit MemOperand(A64Register &base, s32 offset = 0,
-                                   AddressMode addr_mode = Offset)
+                                   AddressMode addr_mode = OffsetMode)
                 : base_(base), reg_offset_(UNKNOW_REG), offset_(offset), addr_mode_(addr_mode),
                   shift_(NO_SHIFT),
                   extend_(NO_EXTEND), shift_extend_imm_(0) {}
 
         inline explicit MemOperand(A64Register &base, A64Register &reg_offset,
                                    Extend extend, unsigned extend_imm)
-                : base_(base), reg_offset_(reg_offset), offset_(0), addr_mode_(Offset),
+                : base_(base), reg_offset_(reg_offset), offset_(0), addr_mode_(OffsetMode),
                   shift_(NO_SHIFT), extend_(extend),
                   shift_extend_imm_(extend_imm) {}
 
         inline explicit MemOperand(A64Register base, A64Register &reg_offset,
                                    Shift shift = LSL, unsigned shift_imm = 0)
-                : base_(base), reg_offset_(reg_offset), offset_(0), addr_mode_(Offset),
+                : base_(base), reg_offset_(reg_offset), offset_(0), addr_mode_(OffsetMode),
                   shift_(shift), extend_(NO_EXTEND),
                   shift_extend_imm_(shift_imm) {}
 
         inline explicit MemOperand(A64Register &base, const Operand &offset,
-                                   AddressMode addr_mode = Offset)
+                                   AddressMode addr_mode = OffsetMode)
                 : base_(base), reg_offset_(UNKNOW_REG), addr_mode_(addr_mode) {
             if (offset.IsShiftedRegister()) {
                 reg_offset_ = offset.reg_;
@@ -397,9 +397,9 @@ namespace Instruction::A64 {
 
         // =====
 
-        bool IsImmediateOffset() const { return (addr_mode_ == Offset); }
+        bool IsImmediateOffset() const { return (addr_mode_ == OffsetMode); }
 
-        bool IsRegisterOffset() const { return (addr_mode_ == Offset); }
+        bool IsRegisterOffset() const { return (addr_mode_ == OffsetMode); }
 
         bool IsPreIndex() const { return addr_mode_ == PreIndex; }
 
@@ -413,6 +413,32 @@ namespace Instruction::A64 {
         Shift shift_;
         Extend extend_;
         s32 shift_extend_imm_;
+    };
+
+    struct Label {
+        VAddr pc_;
+        bool virtual_;
+    };
+
+    class Offset {
+    public:
+
+        enum Type : u8 {
+            PC,
+            VPC,
+            OFFSET
+        };
+
+        explicit Offset(s32 offset) : offset_(offset), type_(OFFSET) {}
+
+        explicit Offset(Label &label) : pc_(label.pc_), type_(label.virtual_ ? VPC : PC) {}
+
+    private:
+        Type type_ {OFFSET};
+        union {
+            s32 offset_;
+            VAddr pc_;
+        };
     };
 
     struct AArch64Inst {

@@ -691,7 +691,7 @@ bool InstrA64StoreRegImm::Disassemble(AArch64Inst &inst) {
     } else if (operand_.addr_mode_ == PreIndex) {
         flags_.StoreWriteBack = 1;
         flags_.StoreImmSigned = 1;
-    } else if (operand_.addr_mode_ == Offset){
+    } else if (operand_.addr_mode_ == OffsetMode){
         // 1x - Load/store register (unsigned immediate)
         if (inst.ldrstr_op3 < 2) {
             return false;
@@ -734,7 +734,7 @@ bool InstrA64LoadRegImm::Disassemble(AArch64Inst &inst) {
     } else if (operand_.addr_mode_ == PreIndex) {
         flags_.LoadWriteBack = 1;
         flags_.LoadImmSigned = 1;
-    } else if (operand_.addr_mode_ == Offset){
+    } else if (operand_.addr_mode_ == OffsetMode){
         // 1x - Load/store register (unsigned immediate)
         if (inst.ldrstr_op3 < 2) {
             return false;
@@ -758,6 +758,10 @@ bool InstrA64LoadRegImm::Disassemble(AArch64Inst &inst) {
 bool InstrA64LoadRegImm::Assemble() {
     ENCODE_OPCODE;
     return true;
+}
+
+InstrA64LoadAndStore::LoadFlags &InstrA64LoadRegImm::GetFlags() {
+    return flags_;
 }
 
 

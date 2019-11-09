@@ -22,7 +22,7 @@ namespace Instruction::IR {
 
         InstrIR(OpcodeIR opcode, size_t useCount, const std::array<Argument, max_arg_count> &args);
 
-        void SetArg(int pos, Argument &argument);
+        void SetArg(int pos, const Argument &argument);
 
         OpcodeIR opcode_;
         u32 use_count = 0;

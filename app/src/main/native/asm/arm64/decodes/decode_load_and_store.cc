@@ -37,49 +37,51 @@ InstrA64Ref DecodeLoadStoreExclusive(AArch64Inst &instr) {
         return nullptr;
     }
 
-//    switch (instr.size) {
-//        case InstrA64LoadAndStore::Size8:
-//            if (o2 == 0) {
-//                if (instr.L == 0) {
-//                    if (o0 == 0) {
-//                        STORE_REG_IMM(STXRB)
-//                        SET_FLAG_STR_REGIMM(StoreExclusive)
-//                    } else {
-//                        // o0 == 1
-//                        STORE_REG_IMM(STLXRB)
-//                        SET_FLAG_STR_REGIMM(StoreExclusive)
-//                        SET_FLAG_STR_REGIMM(StoreRelease)
-//                    }
-//                } else {
-//                    // L == 1
-//                    if (o0 == 0) {
-//                        LOAD_REG_IMM(LDXRB)
-//                        SET_FLAG_LOAD_REGIMM(LoadExclusive)
-//                    } else {
-//                        // o0 == 1
-//                        LOAD_REG_IMM(LDAXRB)
-//                        SET_FLAG_LOAD_REGIMM(LoadExclusive)
-//                        SET_FLAG_LOAD_REGIMM(LoadAcquire)
-//                    }
-//                }
-//            } else {
-//                // o2 == 1
-//                if (instr.L == 0) {
-//                    STORE_REG_IMM(STLRB)
-//                    SET_FLAG_STR_REGIMM(StoreExclusive)
-//                } else {
-//                    // L == 1
-//                    LOAD_REG_IMM(LDARB)
-//                    SET_FLAG_LOAD_REGIMM(LoadExclusive)
-//                    SET_FLAG_LOAD_REGIMM(LoadAcquire)
-//                }
-//            }
-//            break;
-//        case 1:
-//            break;
-//        case 2:
-//            break;
-//    }
+    InstrA64Ref instruction;
+
+    switch (instr.size) {
+        case InstrA64LoadAndStore::Size8:
+            if (o2 == 0) {
+                if (instr.L == 0) {
+                    if (o0 == 0) {
+                        STORE_REG_IMM(STXR)
+                        SET_FLAG_STR_REGIMM(StoreExclusive)
+                    } else {
+                        // o0 == 1
+                        STORE_REG_IMM(STLXR)
+                        SET_FLAG_STR_REGIMM(StoreExclusive)
+                        SET_FLAG_STR_REGIMM(StoreRelease)
+                    }
+                } else {
+                    // L == 1
+                    if (o0 == 0) {
+                        LOAD_REG_IMM(LDXR)
+                        SET_FLAG_LOAD_REGIMM(LoadExclusive)
+                    } else {
+                        // o0 == 1
+                        LOAD_REG_IMM(LDAXR)
+                        SET_FLAG_LOAD_REGIMM(LoadExclusive)
+                        SET_FLAG_LOAD_REGIMM(LoadAcquire)
+                    }
+                }
+            } else {
+                // o2 == 1
+                if (instr.L == 0) {
+                    STORE_REG_IMM(STLR)
+                    SET_FLAG_STR_REGIMM(StoreExclusive)
+                } else {
+                    // L == 1
+                    LOAD_REG_IMM(LDAR)
+                    SET_FLAG_LOAD_REGIMM(LoadExclusive)
+                    SET_FLAG_LOAD_REGIMM(LoadAcquire)
+                }
+            }
+            break;
+        case InstrA64LoadAndStore::Size16:
+            break;
+        case InstrA64LoadAndStore::Size32:
+            break;
+    }
 }
 
 InstrA64Ref DecodeLoadRegLiteral(AArch64Inst &instr) {
@@ -328,7 +330,7 @@ InstrA64Ref FastBranchDecoder::DecodeLoadAndStore(InstrA64 instr_bits) {
                 if (inst.ldrstr_op4 < 32) {
                     // 0xxxxx
                     switch (inst.addr_mode) {
-                        case Offset:
+                        case OffsetMode:
                             // 00 - Load/store register (unscaled immediate)
                             instruction = DecodeLoadStoreRegUnscaled(inst);
                             break;

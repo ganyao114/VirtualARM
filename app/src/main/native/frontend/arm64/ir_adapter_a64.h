@@ -5,12 +5,14 @@
 #pragma once
 
 #include "frontend/ir/assembler_ir.h"
+#include "frontend/ir/argument_ir.h"
 
 using namespace Instruction::IR;
 
 namespace Instruction::A64 {
 
     class IRAdapter {
+
     };
 
 }

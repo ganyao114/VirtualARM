@@ -331,6 +331,28 @@ namespace Instruction::A64 {
         };
     };
 
+    enum StoreConst : u8 {
+        StoreWriteBack = 1 << 0,
+        //use updated Rn
+        StorePostIndex = 1 << 1,
+        StoreImmSigned = 1 << 2,
+        StoreFloat = 1 << 3,
+        Store128BitFloat = 1 << 4,
+        StoreRelease = 1 << 5,
+        StoreExclusive = 1 << 6,
+    };
+
+    enum LoadConst : u16 {
+        LoadWriteBack = 1 << 0,
+        LoadImmSigned = 1 << 1,
+        LoadPostIndex = 1 << 2,
+        LoadExtendResult = 1 << 3,
+        LoadExtendTo64 = 1 << 4,
+        LoadFloat = 1 << 5,
+        Load128BitFloat = 1 << 6,
+        LoadAcquire = 1 << 7,
+        LoadExclusive = 1 << 8,
+    };
 
     class InstrA64LoadAndStore : public InstructionA64 {
     public:
@@ -403,6 +425,8 @@ namespace Instruction::A64 {
         InstrTypeA64 TypeOfA64() const override {
             return InstrTypeA64::LoadRegImm;
         };
+
+        LoadFlags &GetFlags();
 
         bool Assemble() override;
 
