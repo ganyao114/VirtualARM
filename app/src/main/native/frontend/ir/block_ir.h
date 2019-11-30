@@ -47,6 +47,22 @@ namespace Code::IR {
         void Emit(InstrIR &instr);
         void Terminal(If &ter);
         void Terminal(CheckBit &ter);
+
+
+        template <typename Ret = Return>
+        Ret &Emit(u8 opcode, std::initializer_list<Argument> args) {
+            InstrIR &inst = InstrIRPool::Get().Acquire();
+            inst.opcode_ = opcode;
+            Ret r(&inst);
+            inst.return_ = r;
+            std::for_each(args.begin(), args.end(), [&inst, index = size_t(0)](const auto& arg) mutable {
+                inst.SetArg(index, arg);
+                index++;
+            });
+            Emit(inst);
+            return r;
+        }
+
     private:
         slist<InstrIR, cache_last<true>> instrs_;
         TerminalType terminal_type_;

@@ -14,9 +14,18 @@ void InstrIR::SetArg(int pos, const Argument &argument) {
     args_[pos] = argument;
 }
 
+
+InstrIRPool &InstrIRPool::Get() {
+    static InstrIRPool pool;
+    return pool;
+}
+
 InstrIR &InstrIRPool::Acquire() {
+    LockGuard lock(pool_lock_);
+
 }
 
 void InstrIRPool::Release(InstrIR &instr) {
+    LockGuard lock(pool_lock_);
 
 }

@@ -8,31 +8,15 @@ using namespace Instruction::A64;
 
 // IR Assembler
 #define INST0(name, ret) ret& AssemblerIR::name() { \
-    InstrIR &inst = InstrIRPool::Acquire(); \
-    inst.opcode_ = static_cast<u8>(OpcodeIRA64::name); \
-    ret r(&inst); \
-    inst.return_ = r; \
-    block_->Emit(inst); \
-    return r; \
+    return block_->Emit<ret>(static_cast<u8>(OpcodeIRA64::name), {}); \
 }
+
 #define INST1(name, ret, arg1) ret& AssemblerIR::name(const arg1& a1) { \
-    InstrIR &inst = InstrIRPool::Acquire(); \
-    inst.opcode_ = static_cast<u8>(OpcodeIRA64::name); \
-    ret r(&inst); \
-    inst.return_ = r; \
-    inst.SetArg(0, a1); \
-    block_->Emit(inst); \
-    return r; \
+    return block_->Emit<ret>(static_cast<u8>(OpcodeIRA64::name), {a1}); \
 }
+
 #define INST2(name, ret, arg1, arg2) ret& AssemblerIR::name(const arg1& a1, const arg2& a2) { \
-    InstrIR &inst = InstrIRPool::Acquire(); \
-    inst.opcode_ = static_cast<u8>(OpcodeIRA64::name); \
-    ret r(&inst); \
-    inst.return_ = r; \
-    inst.SetArg(0, a1); \
-    inst.SetArg(1, a2); \
-    block_->Emit(inst); \
-    return r; \
+    return block_->Emit<ret>(static_cast<u8>(OpcodeIRA64::name), {a1, a2}); \
 }
 
 #include "opcodes_ir_a64.inl"
