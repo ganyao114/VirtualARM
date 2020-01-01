@@ -459,4 +459,25 @@ namespace Instruction::A64 {
 
         AArch64Inst(u32 raw);
     };
+
+
+    using FieldGetA64Func = std::function<u32(AArch64Inst&)>;
+
+    namespace AArch64Fields {
+
+        enum Fields {
+
+#define FIELD(name, from, to) name,
+
+#include "fields_table.inl"
+
+#undef FIELD
+        };
+
+    }
+
+    const std::function<u32(AArch64Inst&)> GetAArch64FieldGetFunc(AArch64Fields::Fields field);
+
+    u32 GetAArch64Field(AArch64Fields::Fields type, AArch64Inst &inst);
+
 }

@@ -14,7 +14,7 @@ namespace Instruction::A64 {
 
 #define DECODE_OFFSET(val, bits, ext) offset_ = SignExtend<s32, (bits + ext)>(val << ext)
 #define ENCODE_OFFSET(bits, ext) TruncateSTo<bits>(GetOffset() >> ext)
-#define ENCODE_OPCODE pc_->raw = InstructionTableA64::Get().GetInstrInfo(GetOpcode()).mask_pair.second
+#define ENCODE_OPCODE pc_->raw = InstructionTableA64::Get().GetInstrInfo(GetOpcode()).mask_pair_.second
 #define PAGE_OFFSET 12
 #define A64_PAGE_SIZE (2 << PAGE_OFFSET)
 

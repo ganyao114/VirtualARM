@@ -64,3 +64,19 @@ A64Register A64Register::V(u32 data_size, u8 code) {
         return VREG(code);
     }
 }
+
+const std::function<u32(AArch64Inst&)> Instruction::A64::GetAArch64FieldGetFunc(AArch64Fields::Fields field) {
+    static const std::function<u32(AArch64Inst&)> functions[] = {
+#define FIELD(name, from, to) \
+    [] (AArch64Inst &inst) -> u32 { \
+            return inst.name; \
+    },
+    #include "fields_table.inl"
+#undef FIELD
+    };
+    return functions[static_cast<u8>(field)];
+}
+
+u32 Instruction::A64::GetAArch64Field(AArch64Fields::Fields type, AArch64Inst &inst) {
+    return GetAArch64FieldGetFunc(type)(inst);
+}

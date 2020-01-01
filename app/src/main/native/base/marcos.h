@@ -236,3 +236,96 @@ using ObjectRef = SharedPtr<BaseObject>;
 #define ARG_LIST(...) __VA_ARGS__
 
 #define OFFSET_OF(t, d) __builtin_offsetof(t, d)
+
+
+template<typename Function, typename Tuple, std::size_t... Index>
+decltype(auto) invoke_impl(Function&& func, Tuple&& t, std::index_sequence<Index...>)
+{
+    return func(std::get<Index>(std::forward<Tuple>(t))...);
+}
+
+template<typename Function, typename Tuple>
+decltype(auto) invoke(Function&& func, Tuple&& t)
+{
+    constexpr auto size = std::tuple_size<typename std::decay<Tuple>::type>::value;
+    return invoke_impl(std::forward<Function>(func), std::forward<Tuple>(t), std::make_index_sequence<size>{});
+}
+
+/// Used to provide information about an arbitrary function.
+template <typename Function>
+struct FunctionInfo : public FunctionInfo<decltype(&Function::operator())>
+{
+};
+
+/**
+ * Partial specialization for function types.
+ *
+ * This is used as the supporting base for all other specializations.
+ */
+template <typename R, typename... Args>
+struct FunctionInfo<R(Args...)>
+{
+    using return_type = R;
+    static constexpr size_t args_count = sizeof...(Args);
+
+    template <size_t ParameterIndex>
+    struct Parameter
+    {
+        using type = std::tuple_element_t<ParameterIndex, std::tuple<Args...>>;
+    };
+
+    using equivalent_function_type = R(Args...);
+};
+
+/// Partial specialization for function pointers
+template <typename R, typename... Args>
+struct FunctionInfo<R(*)(Args...)> : public FunctionInfo<R(Args...)>
+{
+};
+
+/// Partial specialization for member function pointers.
+template <typename C, typename R, typename... Args>
+struct FunctionInfo<R(C::*)(Args...)> : public FunctionInfo<R(Args...)>
+{
+    using class_type = C;
+};
+
+/// Partial specialization for const member function pointers.
+template <typename C, typename R, typename... Args>
+struct FunctionInfo<R(C::*)(Args...) const> : public FunctionInfo<R(Args...)>
+{
+    using class_type = C;
+};
+
+/**
+ * Helper template for retrieving the type of a function parameter.
+ *
+ * @tparam Function       An arbitrary function type.
+ * @tparam ParameterIndex Zero-based index indicating which parameter to get the type of.
+ */
+template <typename Function, size_t ParameterIndex>
+using parameter_type_t = typename FunctionInfo<Function>::template Parameter<ParameterIndex>::type;
+
+/**
+ * Helper template for retrieving the return type of a function.
+ *
+ * @tparam Function The function type to get the return type of.
+ */
+template <typename Function>
+using return_type_t = typename FunctionInfo<Function>::return_type;
+
+/**
+ * Helper template for retrieving the class type of a member function.
+ *
+ * @tparam Function The function type to get the return type of.
+ */
+template <typename Function>
+using class_type_t = typename FunctionInfo<Function>::class_type;
+
+/**
+ * Helper template for retrieving the equivalent function type of a member function or functor.
+ *
+ * @tparam Function The function type to get the return type of.
+ */
+template <typename Function>
+using equivalent_function_type_t = typename FunctionInfo<Function>::equivalent_function_type;

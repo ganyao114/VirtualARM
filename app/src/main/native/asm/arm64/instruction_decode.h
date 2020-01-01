@@ -8,6 +8,7 @@
 #include "instruction_table.h"
 
 namespace Instruction::A64 {
+
     class Decoder {
     public:
         virtual InstrA64Ref Decode(InstrA64 *instr_bits) = 0;

@@ -542,7 +542,7 @@ bool InstrA64LogicalImm::Disassemble(AArch64Inst &inst) {
 
 bool InstrA64LogicalImm::Assemble() {
     unsigned n, imm_s, imm_r;
-    pc_->raw = InstructionTableA64::Get().GetInstrInfo(GetOpcode()).mask_pair.second;
+    pc_->raw = InstructionTableA64::Get().GetInstrInfo(GetOpcode()).mask_pair_.second;
     if (IsImmLogical(imm_, rd_.IsX() ? kXRegSize : kWRegSize, &n, &imm_s, &imm_r)) {
         pc_->N = n;
         pc_->imms = imm_s;
