@@ -78,25 +78,3 @@ std::map<OpcodeA64, InstrA64Info> &
 InstructionTableA64::GetInstrTable(InstrTypeA64 type) {
     return instr_type_table_[type];
 }
-
-template<typename Visitor>
-void Dispatcher<Visitor>::init() {
-    using namespace AArch64Fields;
-
-
-#define FIELD1(...) __VA_ARGS__
-#define FIELD2(...) __VA_ARGS__
-#define FIELD3(...) __VA_ARGS__
-#define Type(x)
-#define INST(x, name, fields, mask, ...) \
-    callers_[OpcodeA64::x] = Dispatcher<Visitor>::GetCaller(&Visitor::x, {fields});
-
-#include "instructions_table.inl"
-
-#undef INST
-#undef ARG_LIST
-#undef Type
-#undef FIELD1
-#undef FIELD2
-#undef FIELD3
-}

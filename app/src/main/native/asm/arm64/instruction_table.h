@@ -110,35 +110,49 @@ namespace Instruction::A64 {
         using VisitorReturnType = typename Visitor::instruction_return_type;
         using VisitorCallerFunc = std::function<VisitorReturnType(Visitor&, AArch64Inst&)>;
 
-        void init();
+        void Init() {
+            using namespace AArch64Fields;
+
+#define FIELD1(...) __VA_ARGS__
+#define FIELD2(...) __VA_ARGS__
+#define FIELD3(...) __VA_ARGS__
+#define FIELD4(...) __VA_ARGS__
+#define Type(x)
+#define INST(x, name, fields, mask, ...) \
+    callers_[static_cast<int>(OpcodeA64::x)] = Dispatcher<Visitor>::GetCaller(&Visitor::x, {fields});
+
+#include "instructions_table.inl"
+
+#undef INST
+#undef ARG_LIST
+#undef Type
+#undef FIELD1
+#undef FIELD2
+#undef FIELD3
+#undef FIELD4
+        }
+
+        Dispatcher(Visitor &visitor) : visitor(visitor) {}
 
         template<typename FnT, size_t args_count = FunctionInfo<FnT>::args_count>
-        static auto GetCaller(FnT fn, std::array<AArch64Fields::Fields, args_count> fields) {
+        auto GetCaller(FnT fn, std::array<AArch64Fields::Fields, args_count> fields) {
             using Iota = std::make_index_sequence<args_count>;
             const auto proxy_fn = VisitorCaller<FnT>::Make(Iota(), fn, fields);
             return proxy_fn;
         }
 
+        FORCE_INLINE VisitorReturnType Call(OpcodeA64 opcodeA64, AArch64Inst &inst) {
+            visitor.inst = &inst;
+            callers_[static_cast<int>(opcodeA64)](visitor, inst);
+        }
+
     private:
-        std::map<OpcodeA64, VisitorCallerFunc> callers_;
+        Visitor &visitor;
+        VisitorCallerFunc callers_[static_cast<int>(OpcodeA64::NUM_INSTRUCTIONS)];
     };
 
-    struct DefaultDissamVisitor final {
-        using instruction_return_type = void;
-#define Type(...)
-#define FIELD1(f1) u32 f1
-#define FIELD2(f1, f2) u32 f1, u32 f2
-#define FIELD3(f1, f2, f3) u32 f1, u32 f2, u32 f3
-#define INST(code, name, fields, ...) \
-    void code(fields);
-
-#include "instructions_table.inl"
-
-#undef FIELD1
-#undef FIELD2
-#undef FIELD3
-#undef INST
-#undef Type
+    struct BaseVisitor {
+        AArch64Inst *inst;
     };
 
     class InstructionTableA64 {

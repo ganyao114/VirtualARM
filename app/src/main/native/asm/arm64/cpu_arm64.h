@@ -109,5 +109,17 @@ namespace CPU::A64 {
         u32 fpcr;
         u32 fpsr;
         u64 tpidr;
+        u64 tpidrro;
     };
 }
+
+extern "C" const VAddr OFFSET_CTX_A64_CPU_REG;
+extern "C" const VAddr OFFSET_CTX_A64_SP;
+extern "C" const VAddr OFFSET_CTX_A64_PC;
+extern "C" const VAddr OFFSET_CTX_A64_PSTATE;
+extern "C" const VAddr OFFSET_CTX_A64_VEC_REG;
+extern "C" const VAddr OFFSET_CTX_A64_FPCR;
+extern "C" const VAddr OFFSET_CTX_A64_FPSR;
+extern "C" const VAddr OFFSET_CTX_A64_TPIDR;
+extern "C" const VAddr OFFSET_CTX_A64_TPIDRRO;
+

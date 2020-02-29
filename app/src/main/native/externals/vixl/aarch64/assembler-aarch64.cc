@@ -6155,7 +6155,9 @@ bool Assembler::CPUHas(SystemRegister sysreg) const {
     case RNDRRS:
       return CPUHas(CPUFeatures::kRNG);
     case FPCR:
+    case FPSR:
     case NZCV:
+    case TPIDR_EL0:
       break;
   }
   return true;
