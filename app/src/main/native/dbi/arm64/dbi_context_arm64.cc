@@ -157,6 +157,14 @@ void ContextNoMemTrace::RestoreContextFull() {
     WrapContext(wrap);
 }
 
+void ContextNoMemTrace::PreDispatch() {
+    __ Push(TMP0, TMP1);
+}
+
+void ContextNoMemTrace::PostDispatch() {
+    __ Pop(TMP0, TMP1);
+}
+
 ContextWithMemTrace::ContextWithMemTrace() : Context(TMP1) {
     // Need keep CTX_REG, so rewrite all instructions used CTX_REG
 }

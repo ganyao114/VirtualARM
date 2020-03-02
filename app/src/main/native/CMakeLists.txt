@@ -37,6 +37,8 @@ add_library(virtual_arm SHARED
         dbi/arm64/dbi_arm64.cc
         dbi/arm64/dbi_visitor_arm64.cc
         dbi/arm64/dbi_context_arm64.cc
+        dbi/arm64/dbi_mmu_arm64.cpp
+        block/host_code_block.cpp
 )
 
 

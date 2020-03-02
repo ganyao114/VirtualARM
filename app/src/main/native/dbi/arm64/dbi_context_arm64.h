@@ -60,6 +60,9 @@ namespace DBI::A64 {
     protected:
         void WrapContext(std::function<void()> wrap);
 
+        void PreDispatch();
+        void PostDispatch();
+
     public:
         ContextNoMemTrace();
 
