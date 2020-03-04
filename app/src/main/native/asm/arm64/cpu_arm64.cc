@@ -15,3 +15,4 @@ const VAddr OFFSET_CTX_A64_FPCR = OFFSET_OF(CPUContext, fpcr);
 const VAddr OFFSET_CTX_A64_FPSR = OFFSET_OF(CPUContext, fpsr);
 const VAddr OFFSET_CTX_A64_TPIDR = OFFSET_OF(CPUContext, tpidr);
 const VAddr OFFSET_CTX_A64_TPIDRRO = OFFSET_OF(CPUContext, tpidrro);
+const VAddr OFFSET_CTX_A64_FORWARD = OFFSET_OF(CPUContext, forward);

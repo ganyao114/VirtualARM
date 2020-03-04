@@ -110,6 +110,7 @@ namespace CPU::A64 {
         u32 fpsr;
         u64 tpidr;
         u64 tpidrro;
+        VAddr forward;
     };
 }
 
@@ -122,4 +123,5 @@ extern "C" const VAddr OFFSET_CTX_A64_FPCR;
 extern "C" const VAddr OFFSET_CTX_A64_FPSR;
 extern "C" const VAddr OFFSET_CTX_A64_TPIDR;
 extern "C" const VAddr OFFSET_CTX_A64_TPIDRRO;
+extern "C" const VAddr OFFSET_CTX_A64_FORWARD;
 

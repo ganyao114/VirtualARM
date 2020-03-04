@@ -84,8 +84,8 @@ namespace DBI::A64 {
     public:
         ContextWithMemTrace();
 
-        void LookupPageTable(u8 addr_reg);
-        void LookupPageTable(VAddr const_addr, u8 reg);
+        void LookupFlatPageTable(u8 addr_reg);
+        void LookupFlatPageTable(VAddr const_addr, u8 reg);
 
         VAddr page_tabel_addr_{0};
 
@@ -94,6 +94,7 @@ namespace DBI::A64 {
         void PopX(u8 reg1, u8 reg2 = NO_REG);
 
         std::pair<u8, u8> PeekTmpRegs(u8 reg_target);
+        u8 address_bits_unused_;
     };
 
 }

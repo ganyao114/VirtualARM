@@ -169,7 +169,7 @@ ContextWithMemTrace::ContextWithMemTrace() : Context(TMP1) {
     // Need keep CTX_REG, so rewrite all instructions used CTX_REG
 }
 
-void ContextWithMemTrace::LookupPageTable(u8 reg_addr) {
+void ContextWithMemTrace::LookupFlatPageTable(u8 reg_addr) {
     constexpr static int PAGE_BITS = 12;
     auto rt = XRegister::GetXRegFromCode(reg_addr);
     auto [tmp_reg1, tmp_reg2] = PeekTmpRegs(reg_addr);
@@ -177,16 +177,17 @@ void ContextWithMemTrace::LookupPageTable(u8 reg_addr) {
     auto tmp2 = XRegister::GetXRegFromCode(tmp_reg2);
     PushX(tmp_reg1, tmp_reg2);
     __ Mov(tmp1, Operand(XRegister::GetXRegFromCode(reg_addr), LSR, PAGE_BITS));
+    __ Bfc(tmp1, sizeof(VAddr) * 8 - address_bits_unused_ - PAGE_BITS, address_bits_unused_ + PAGE_BITS);
     __ Mov(tmp2, page_tabel_addr_);
     __ Add(tmp1, tmp2, Operand(tmp1, LSL, 3));
     __ Ldr(rt, MemOperand(tmp1));
     PopX(tmp_reg1, tmp_reg2);
 }
 
-void ContextWithMemTrace::LookupPageTable(VAddr const_addr, u8 reg) {
+void ContextWithMemTrace::LookupFlatPageTable(VAddr const_addr, u8 reg) {
     constexpr static int PAGE_BITS = 12;
     auto rt = XRegister::GetXRegFromCode(reg);
-    __ Mov(rt ,page_tabel_addr_ + (const_addr << PAGE_BITS) * 8);
+    __ Mov(rt ,page_tabel_addr_ + BitRange<VAddr>(const_addr, PAGE_BITS, sizeof(VAddr) * 8 - address_bits_unused_ - 1) * 8);
     __ Ldr(rt, MemOperand(rt));
 }
 

@@ -105,18 +105,10 @@ InstrA64Ref FastBranchDecoder::DecodeSystemAndBranch(InstrA64 instr_bits) {
                 // 0xxx - Compare & branch (immediate)
                 bool is_64 = TestBit<31>(instr_bits);
                 bool negate = TestBit<24>(instr_bits);
-                if (is_64) {
-                    if (negate) {
-                        instr->SetOpcode(OpcodeA64::CBNZ_64);
-                    } else {
-                        instr->SetOpcode(OpcodeA64::CBZ_64);
-                    }
+                if (negate) {
+                    instr->SetOpcode(OpcodeA64::CBNZ);
                 } else {
-                    if (negate) {
-                        instr->SetOpcode(OpcodeA64::CBNZ_32);
-                    } else {
-                        instr->SetOpcode(OpcodeA64::CBZ_32);
-                    }
+                    instr->SetOpcode(OpcodeA64::CBZ);
                 }
             } else {
                 // 1xxx - Test & branch (immediate)

@@ -64,7 +64,7 @@ A64::CodeBlock::~CodeBlock() {
 }
 
 void A64::CodeBlock::GenDispatcher(Buffer &buffer) {
-    auto delta = GetBufferStart(buffer) - reinterpret_cast<VAddr >(&dispatcher_table_->dispatchers_[buffer.id_]);
+    auto delta = GetBufferStart(buffer) - reinterpret_cast<VAddr >(&dispatcher_table_->dispatchers_[buffer.id_].instr_direct_branch_);
     // B offset
-    dispatcher_table_->dispatchers_[buffer.id_].instr_direct_branch_ = 0x14000000 | (0x03ffffff & (reinterpret_cast<u32>(delta) >> 2));
+    dispatcher_table_->dispatchers_[buffer.id_].instr_direct_branch_ = 0x14000000 | (0x03ffffff & (static_cast<u32>(delta) >> 2));
 }

@@ -16,6 +16,7 @@ FIELD(bch_ucond_op4, 0, 4)
 FIELD(bch_ucond_offset, 0, 25)
 FIELD(bch_cond_offset, 5, 23)
 FIELD(tbz_offset, 5, 18) // u16 immediate
+FIELD(negate, 24, 24)
 //exception
 FIELD(exp_gen_ll, 0, 1)
 //system

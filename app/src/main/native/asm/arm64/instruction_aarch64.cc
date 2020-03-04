@@ -98,7 +98,7 @@ bool InstrA64Branch::Disassemble(AArch64Inst &inst) {
             break;
         case OpcodeA64::RET:
             break;
-        case OpcodeA64::CBNZ_64: case OpcodeA64::CBZ_64: case OpcodeA64::CBZ_32: case OpcodeA64::CBNZ_32:
+        case OpcodeA64::CBNZ: case OpcodeA64::CBZ:
             DECODE_OFFSET(inst.bch_ucond_offset, 26, 2);
             rt_ = XREG(inst.Rt);
             break;
@@ -125,7 +125,7 @@ bool InstrA64Branch::Assemble() {
             break;
         case OpcodeA64::RET:
             break;
-        case OpcodeA64::CBNZ_64: case OpcodeA64::CBZ_64: case OpcodeA64::CBZ_32: case OpcodeA64::CBNZ_32:
+        case OpcodeA64::CBNZ: case OpcodeA64::CBZ:
             pc_->Rt = rt_.Code();
             pc_->bch_cond_offset = ENCODE_OFFSET(19, 2);
             break;
@@ -133,6 +133,7 @@ bool InstrA64Branch::Assemble() {
             pc_->Rn = rn_.Code();
             break;
         case OpcodeA64::TBZ: case OpcodeA64::TBNZ:
+
             break;
         default:
             return false;

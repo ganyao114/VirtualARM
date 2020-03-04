@@ -14,6 +14,7 @@ include_directories(externals/vixl)
 add_library(virtual_arm SHARED
         virtual_arm.cc
         base/marcos.cc
+        base/hash_table.cc
         instruction/instruction.cc
         asm/arm64/instruction_fields.cc
         asm/arm64/instruction_aarch64.cc
@@ -23,6 +24,7 @@ add_library(virtual_arm SHARED
         asm/arm64/decodes/decode_data_process_imm.cc
         asm/arm64/decodes/decode_load_and_store.cc
         asm/arm64/cpu_arm64.cc
+        asm/arm64/visitors/decode_visitors.cc
         frontend/ir/opcode_ir.cc
         frontend/ir/argument_ir.cc
         frontend/ir/instruction_ir.cc
@@ -39,6 +41,8 @@ add_library(virtual_arm SHARED
         dbi/arm64/dbi_context_arm64.cc
         dbi/arm64/dbi_mmu_arm64.cpp
         block/host_code_block.cpp
+        block/code_find_table.cc
+        mmu/page_table.cc
 )
 
 
