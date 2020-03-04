@@ -20,7 +20,7 @@ namespace DBI::A64 {
 #define TMP1 x16
 #define HOST_TLS ({ void** __val; __asm__("mrs %0, tpidr_el0" : "=r"(__val)); __val; })
 
-    class Context {
+    class Context : public BaseObject {
     public:
 
         Context(const Register &reg_ctx);
@@ -46,6 +46,8 @@ namespace DBI::A64 {
         // context switch
         virtual void SaveContextFull() {};
         virtual void RestoreContextFull() {};
+
+        virtual void FindForwardTarget(u8 reg_target) {};
 
         CPU::A64::CPUContext context_;
         VAddr cur_pc_;
