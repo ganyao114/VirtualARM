@@ -118,6 +118,7 @@ namespace CPU::A64 {
         u64 forward;
         VAddr tlb;
         VAddr page_table;
+        VAddr suspend_flag;
     };
 }
 
@@ -133,4 +134,5 @@ extern "C" const VAddr OFFSET_CTX_A64_TPIDRRO;
 extern "C" const VAddr OFFSET_CTX_A64_FORWARD;
 extern "C" const VAddr OFFSET_CTX_A64_TLB;
 extern "C" const VAddr OFFSET_CTX_A64_PAGE_TABLE;
+extern "C" const VAddr OFFSET_CTX_A64_SUSPEND_ADDR;
 

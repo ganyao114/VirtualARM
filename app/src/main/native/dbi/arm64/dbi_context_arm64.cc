@@ -8,14 +8,16 @@
 using namespace DBI::A64;
 
 Context::Context(const Register &reg_ctx) : masm_{}, REG_CTX{reg_ctx} {
-    suspend_addr_ = static_cast<u64 *>(mmap(0, PAGE_SIZE, PROT_READ,
-                                            MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED,
-                                            -1, 0));
+    suspend_addr_ = reinterpret_cast<u64>(static_cast<u64 *>(mmap(0, PAGE_SIZE, PROT_READ,
+                                                                  MAP_PRIVATE | MAP_ANONYMOUS |
+                                                                  MAP_FIXED,
+                                                                  -1, 0)));
+    context_.suspend_flag = suspend_addr_;
     code_find_table_ = SharedPtr<FindTable<VAddr>>(new FindTable<VAddr>(48));
 }
 
 Context::~Context() {
-    munmap(suspend_addr_, PAGE_SIZE);
+    munmap(reinterpret_cast<void*>(suspend_addr_), PAGE_SIZE);
 }
 
 const CPU::A64::CPUContext &Context::GetContext() const {
@@ -31,12 +33,11 @@ void Context::SetCurPc(VAddr cur_pc) {
 }
 
 void Context::SetSuspendFlag(bool suspend) {
-    mprotect(suspend_addr_, PAGE_SIZE, suspend ? PROT_NONE : PROT_READ);
+    mprotect(reinterpret_cast<void*>(suspend_addr_), PAGE_SIZE, suspend ? PROT_NONE : PROT_READ);
 }
 
 ContextNoMemTrace::ContextNoMemTrace() : Context(TMP1) {
     HOST_TLS[CTX_TLS_SLOT] = &context_;
-    HOST_TLS[SUSP_TLS_SLOT] = suspend_addr_;
 }
 
 void ContextNoMemTrace::WrapContext(std::function<void()> wrap) {
@@ -69,8 +70,7 @@ void ContextNoMemTrace::SavePc(VAddr pc) {
 
 void ContextNoMemTrace::CheckSuspend(bool in_context_wrap) {
     if (in_context_wrap) {
-        __ Mrs(TMP0, TPIDR_EL0);
-        __ Ldr(TMP0, MemOperand(TMP0, SUSP_TLS_SLOT * 8));
+        __ Ldr(TMP0, MemOperand(REG_CTX, OFFSET_CTX_A64_SUSPEND_ADDR));
         // if suspend, trigger 11 signal
         __ Ldr(TMP0, MemOperand(TMP0));
     }
@@ -166,8 +166,18 @@ void ContextNoMemTrace::PostDispatch() {
     __ Pop(TMP0, TMP1);
 }
 
-ContextWithMemTrace::ContextWithMemTrace() : Context(TMP1) {
+void ContextNoMemTrace::FindForwardTarget(u8 reg_target) {
+    auto wrap = [this, reg_target]() -> void {
+        
+    };
+    WrapContext(wrap);
+}
+
+ContextWithMemTrace::ContextWithMemTrace(SharedPtr<PageTable> page_table) : Context(TMP1), page_table_(page_table) {
     // Need keep CTX_REG, so rewrite all instructions used CTX_REG
+    page_bits_ = page_table->GetPageBits();
+    address_bits_unused_ = page_table->GetUnusedBits();
+    tlb_bits_ = page_table->Tbl()->TLBBits();
 }
 
 void ContextWithMemTrace::LookupFlatPageTable(u8 reg_addr) {
@@ -259,4 +269,8 @@ void ContextWithMemTrace::LookupTLB(u8 reg_addr) {
     __ Bl(&label_lookup_page_table);
     __ Bind(&label_hit);
     PopX(tmp_reg1, tmp_reg2);
+}
+
+void ContextWithMemTrace::LookupMultiLevelPageTable(u8 addr_reg) {
+
 }

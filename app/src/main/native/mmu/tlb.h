@@ -19,13 +19,28 @@ namespace MMU {
     template <typename AddrType, typename PTE>
     class TLB : public BaseObject {
     public:
-        TLB(const u8 page_bits, const u8 tlb_bits);
 
-        void CachePage(AddrType vaddr, PTE &pte);
-        void ClearPageCache(AddrType vaddr);
+        TLB(const u8 page_bits, const u8 tlb_bits) : tlb_bits_(tlb_bits), page_bits_(page_bits) {
+            tlb_table_.resize(1U << tlb_bits);
+            tlb_table_.shrink_to_fit();
+        }
+
+        void CachePage(AddrType vaddr, PTE &pte) {
+            auto index = BitRange<AddrType>(vaddr, page_bits_, page_bits_ + tlb_bits_ - 1);
+            tlb_table_[index] = {vaddr >> page_bits_, pte};
+        }
+
+        void ClearPageCache(AddrType vaddr) {
+            auto index = BitRange<AddrType>(vaddr, page_bits_, page_bits_ + tlb_bits_ - 1);
+            tlb_table_[index] = {};
+        }
 
         VAddr TLBTablePtr() {
             return tlb_table_.data();
+        }
+
+        u8 TLBBits() const {
+            return tlb_bits_;
         }
 
     protected:

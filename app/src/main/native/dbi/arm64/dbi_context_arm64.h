@@ -8,6 +8,7 @@
 #include "asm/arm64/cpu_arm64.h"
 #include <base/marcos.h>
 #include "block/code_find_table.h"
+#include "dbi_mmu_arm64.h"
 
 using namespace vixl::aarch64;
 using namespace Code;
@@ -17,7 +18,6 @@ namespace DBI::A64 {
 #define __ masm_.
 #define NO_REG 255
 #define CTX_TLS_SLOT 7
-#define SUSP_TLS_SLOT 8
 #define TMP0 x17
 #define TMP1 x16
 #define HOST_TLS ({ void** __val; __asm__("mrs %0, tpidr_el0" : "=r"(__val)); __val; })
@@ -58,7 +58,7 @@ namespace DBI::A64 {
     protected:
         const Register &REG_CTX;
         MacroAssembler masm_;
-        u64 *suspend_addr_;
+        u64 suspend_addr_;
         SharedPtr<FindTable<VAddr>> code_find_table_;
     };
 
@@ -84,16 +84,20 @@ namespace DBI::A64 {
 
         void SaveContextFull() override;
         void RestoreContextFull() override;
+
+        void FindForwardTarget(u8 reg_target) override;
     };
 
     class ContextWithMemTrace : public Context {
     public:
-        ContextWithMemTrace();
+        ContextWithMemTrace(SharedPtr<PageTable> page_table);
 
         void LookupTLB(u8 reg_addr);
 
         void LookupFlatPageTable(u8 addr_reg);
         void LookupFlatPageTable(VAddr const_addr, u8 reg);
+
+        void LookupMultiLevelPageTable(u8 addr_reg);
 
     protected:
         void PushX(u8 reg1, u8 reg2 = NO_REG);
@@ -103,6 +107,7 @@ namespace DBI::A64 {
         u8 address_bits_unused_;
         u8 page_bits_;
         u8 tlb_bits_;
+        SharedPtr<PageTable> page_table_;
     };
 
 }
