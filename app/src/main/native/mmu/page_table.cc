@@ -30,6 +30,7 @@ void MultiLevelPageTable<AddrType, PTE>::MapPage(AddrType vaddr, PTE &pte) {
             }
             auto pte_index = BitRange<AddrType>(all_page_bits, 0, pte_bits_ - 1);
             (&final_table)[pte_index] = pte;
+            tlb_->CachePage(vaddr, pte);
             break;
         }
     }
@@ -57,6 +58,7 @@ void MultiLevelPageTable<AddrType, PTE>::UnMapPage(AddrType vaddr) {
             }
             auto pte_index = BitRange<AddrType>(all_page_bits, 0, pte_bits_ - 1);
             (&final_table)[pte_index] = nullptr;
+            tlb_->ClearPageCache(vaddr);
             break;
         }
     }

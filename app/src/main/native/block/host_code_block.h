@@ -56,6 +56,13 @@ namespace Code {
 
     namespace A64 {
 
+        /**
+         * 考虑到指令的可修改性
+         * 我们需要一个中间人来分发代码
+         * 当指令被修改时，我们生成新的指令，并且将分发表指向新指令缓存
+         * 直接修改旧缓存，当有其他线程还在执行时会引起不必要的错误
+         */
+
         struct Dispatcher {
             // B label
             u32 instr_direct_branch_;

@@ -14,7 +14,7 @@ using namespace Utils;
 namespace Code {
 
     template <typename AddrType>
-    class FindTable {
+    class FindTable : public BaseObject {
     public:
 
         constexpr static u8 redun_bits = 10;
@@ -28,6 +28,10 @@ namespace Code {
         }
 
         void FillCodeAddress(AddrType vaddr, VAddr target);
+
+        VAddr TableEntryPtr() {
+            return table_entries_.data();
+        }
 
     protected:
         const u8 addr_width_;

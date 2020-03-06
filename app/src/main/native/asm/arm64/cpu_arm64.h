@@ -100,6 +100,11 @@ namespace CPU::A64 {
         int A, I, F;
     };
 
+    struct VirtualTLB {
+        VAddr vaddr;
+        VAddr target;
+    };
+
     struct CPUContext {
         Reg cpu_registers[31];
         u64 sp;
@@ -110,7 +115,9 @@ namespace CPU::A64 {
         u32 fpsr;
         u64 tpidr;
         u64 tpidrro;
-        VAddr forward;
+        u64 forward;
+        VAddr tlb;
+        VAddr page_table;
     };
 }
 
@@ -124,4 +131,6 @@ extern "C" const VAddr OFFSET_CTX_A64_FPSR;
 extern "C" const VAddr OFFSET_CTX_A64_TPIDR;
 extern "C" const VAddr OFFSET_CTX_A64_TPIDRRO;
 extern "C" const VAddr OFFSET_CTX_A64_FORWARD;
+extern "C" const VAddr OFFSET_CTX_A64_TLB;
+extern "C" const VAddr OFFSET_CTX_A64_PAGE_TABLE;
 

@@ -3,3 +3,5 @@
 //
 
 #include "dbi_arm64.h"
+
+using namespace DBI::A64;

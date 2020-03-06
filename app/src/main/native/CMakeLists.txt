@@ -43,6 +43,7 @@ add_library(virtual_arm SHARED
         block/host_code_block.cpp
         block/code_find_table.cc
         mmu/page_table.cc
+        mmu/tlb.cc
 )
 
 

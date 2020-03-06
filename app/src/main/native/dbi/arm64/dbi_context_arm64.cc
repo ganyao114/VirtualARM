@@ -11,6 +11,7 @@ Context::Context(const Register &reg_ctx) : masm_{}, REG_CTX{reg_ctx} {
     suspend_addr_ = static_cast<u64 *>(mmap(0, PAGE_SIZE, PROT_READ,
                                             MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED,
                                             -1, 0));
+    code_find_table_ = SharedPtr<FindTable<VAddr>>(new FindTable<VAddr>(48));
 }
 
 Context::~Context() {
@@ -170,25 +171,29 @@ ContextWithMemTrace::ContextWithMemTrace() : Context(TMP1) {
 }
 
 void ContextWithMemTrace::LookupFlatPageTable(u8 reg_addr) {
-    constexpr static int PAGE_BITS = 12;
     auto rt = XRegister::GetXRegFromCode(reg_addr);
     auto [tmp_reg1, tmp_reg2] = PeekTmpRegs(reg_addr);
     auto tmp1 = XRegister::GetXRegFromCode(tmp_reg1);
     auto tmp2 = XRegister::GetXRegFromCode(tmp_reg2);
     PushX(tmp_reg1, tmp_reg2);
-    __ Mov(tmp1, Operand(XRegister::GetXRegFromCode(reg_addr), LSR, PAGE_BITS));
-    __ Bfc(tmp1, sizeof(VAddr) * 8 - address_bits_unused_ - PAGE_BITS, address_bits_unused_ + PAGE_BITS);
-    __ Mov(tmp2, page_tabel_addr_);
+    __ Mov(tmp1, Operand(rt, LSR, page_bits_));
+    __ Bfc(tmp1, sizeof(VAddr) * 8 - address_bits_unused_ - page_bits_, address_bits_unused_ + page_bits_);
+    __ Ldr(tmp2, MemOperand(REG_CTX, OFFSET_CTX_A64_PAGE_TABLE));
     __ Add(tmp1, tmp2, Operand(tmp1, LSL, 3));
     __ Ldr(rt, MemOperand(tmp1));
     PopX(tmp_reg1, tmp_reg2);
 }
 
 void ContextWithMemTrace::LookupFlatPageTable(VAddr const_addr, u8 reg) {
-    constexpr static int PAGE_BITS = 12;
     auto rt = XRegister::GetXRegFromCode(reg);
-    __ Mov(rt ,page_tabel_addr_ + BitRange<VAddr>(const_addr, PAGE_BITS, sizeof(VAddr) * 8 - address_bits_unused_ - 1) * 8);
+    auto [tmp_reg1, tmp_reg2] = PeekTmpRegs(reg);
+    auto tmp1 = XRegister::GetXRegFromCode(tmp_reg1);
+    PushX(tmp_reg1);
+    __ Ldr(rt, MemOperand(REG_CTX, OFFSET_CTX_A64_PAGE_TABLE));
+    __ Mov(tmp1 ,BitRange<VAddr>(const_addr, page_bits_, sizeof(VAddr) * 8 - address_bits_unused_ - 1) * 8);
+    __ Add(rt, rt, tmp1);
     __ Ldr(rt, MemOperand(rt));
+    PopX(tmp_reg1);
 }
 
 void ContextWithMemTrace::PushX(u8 reg1, u8 reg2) {
@@ -231,4 +236,27 @@ std::pair<u8, u8> ContextWithMemTrace::PeekTmpRegs(u8 reg_target) {
 
     }
     return std::make_pair(0, 1);
+}
+
+void ContextWithMemTrace::LookupTLB(u8 reg_addr) {
+    auto rt = XRegister::GetXRegFromCode(reg_addr);
+    auto [tmp_reg1, tmp_reg2] = PeekTmpRegs(reg_addr);
+    auto tmp1 = XRegister::GetXRegFromCode(tmp_reg1);
+    auto tmp2 = XRegister::GetXRegFromCode(tmp_reg2);
+    Label label_hit, label_lookup_page_table;
+    PushX(tmp_reg1, tmp_reg2);
+    __ Mov(tmp1, Operand(rt, LSR, page_bits_));
+    __ Bfc(tmp1, tlb_bits_, sizeof(VAddr) * 8 - tlb_bits_);
+    __ Ldr(tmp2, MemOperand(REG_CTX, OFFSET_CTX_A64_TLB));
+    // PTE size of a64 = 8, key = 8,so size of tlb entry = 16
+    __ Add(tmp1, tmp2, Operand(tmp1, LSL, 4));
+    __ Ldr(tmp1, MemOperand(tmp1));
+    __ Mov(tmp2, Operand(rt, LSR, page_bits_));
+    __ Sub(tmp2, tmp1, tmp2);
+    __ Cbz(tmp2, &label_hit);
+    // miss cache
+    PopX(tmp_reg1, tmp_reg2);
+    __ Bl(&label_lookup_page_table);
+    __ Bind(&label_hit);
+    PopX(tmp_reg1, tmp_reg2);
 }

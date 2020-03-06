@@ -6,6 +6,7 @@
 
 #include <base/marcos.h>
 #include <vector>
+#include "tlb.h"
 
 namespace MMU {
 
@@ -35,7 +36,7 @@ namespace MMU {
     };
 
     template <typename AddrType, typename AttrType>
-    class FlatPageTable {
+    class FlatPageTable : public BaseObject {
     public:
 
         FlatPageTable(u8 page_bits, u8 addr_width) : page_bits_(page_bits), addr_width_(addr_width) {
@@ -63,7 +64,7 @@ namespace MMU {
     };
 
     template <typename AddrType, typename PTE>
-    class MultiLevelPageTable {
+    class MultiLevelPageTable : public BaseObject {
     public:
 
         using Table = void*;
@@ -80,6 +81,7 @@ namespace MMU {
             pte_bits_ >>= level_;
             pte_size_ = 1ULL << pte_bits_;
             pages_.resize(pte_size_);
+            tlb_ = SharedPtr<TLB<AddrType, PTE>>(new TLB<AddrType, PTE>(page_bits_, 16));
         }
 
         u8 GetPteBits() const;
@@ -100,6 +102,7 @@ namespace MMU {
         std::size_t pte_size_;
         u8 level_;
         std::vector<Table*> pages_;
+        SharedPtr<TLB<AddrType, PTE>> tlb_;
     };
 
 

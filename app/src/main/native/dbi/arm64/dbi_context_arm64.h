@@ -7,8 +7,10 @@
 #include <aarch64/macro-assembler-aarch64.h>
 #include "asm/arm64/cpu_arm64.h"
 #include <base/marcos.h>
+#include "block/code_find_table.h"
 
 using namespace vixl::aarch64;
+using namespace Code;
 
 namespace DBI::A64 {
 
@@ -48,6 +50,7 @@ namespace DBI::A64 {
         virtual void RestoreContextFull() {};
 
         virtual void FindForwardTarget(u8 reg_target) {};
+        virtual void FindForwardTarget(VAddr const_target) {};
 
         CPU::A64::CPUContext context_;
         VAddr cur_pc_;
@@ -56,6 +59,7 @@ namespace DBI::A64 {
         const Register &REG_CTX;
         MacroAssembler masm_;
         u64 *suspend_addr_;
+        SharedPtr<FindTable<VAddr>> code_find_table_;
     };
 
     class ContextNoMemTrace : public Context {
@@ -86,10 +90,10 @@ namespace DBI::A64 {
     public:
         ContextWithMemTrace();
 
+        void LookupTLB(u8 reg_addr);
+
         void LookupFlatPageTable(u8 addr_reg);
         void LookupFlatPageTable(VAddr const_addr, u8 reg);
-
-        VAddr page_tabel_addr_{0};
 
     protected:
         void PushX(u8 reg1, u8 reg2 = NO_REG);
@@ -97,6 +101,8 @@ namespace DBI::A64 {
 
         std::pair<u8, u8> PeekTmpRegs(u8 reg_target);
         u8 address_bits_unused_;
+        u8 page_bits_;
+        u8 tlb_bits_;
     };
 
 }
