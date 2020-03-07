@@ -8,7 +8,7 @@ using namespace Code;
 
 template<typename AddrType>
 void FindTable<AddrType>::FillCodeAddress(AddrType vaddr, VAddr target) {
-    AddrType index = BitRange<AddrType>(vaddr, CODE_CACHE_HASH_BITS + redun_bits, sizeof(AddrType) - addr_width_ - 1);
+    AddrType index = BitRange<AddrType>(vaddr >> align_bits_, CODE_CACHE_HASH_BITS + redun_bits, sizeof(AddrType) - addr_width_ - 1);
     SharedPtr<Table> table = tables_[index];
     if (table == nullptr) {
         table = SharedPtr<Table>(new Table(addr_width_));

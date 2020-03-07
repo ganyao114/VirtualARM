@@ -115,10 +115,16 @@ namespace CPU::A64 {
         u32 fpsr;
         u64 tpidr;
         u64 tpidrro;
-        u64 forward;
+        // memory
         VAddr tlb;
         VAddr page_table;
+        // dispatcher
+        VAddr dispatcher_table;
+        // flags
         VAddr suspend_flag;
+        // help fields
+        u64 forward;
+        u64 query_page;
     };
 }
 
@@ -132,7 +138,9 @@ extern "C" const VAddr OFFSET_CTX_A64_FPSR;
 extern "C" const VAddr OFFSET_CTX_A64_TPIDR;
 extern "C" const VAddr OFFSET_CTX_A64_TPIDRRO;
 extern "C" const VAddr OFFSET_CTX_A64_FORWARD;
+extern "C" const VAddr OFFSET_CTX_A64_QUERY_PAGE;
 extern "C" const VAddr OFFSET_CTX_A64_TLB;
 extern "C" const VAddr OFFSET_CTX_A64_PAGE_TABLE;
 extern "C" const VAddr OFFSET_CTX_A64_SUSPEND_ADDR;
+extern "C" const VAddr OFFSET_CTX_A64_DISPATCHER_TABLE;
 

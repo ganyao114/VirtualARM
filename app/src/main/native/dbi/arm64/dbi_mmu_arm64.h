@@ -12,12 +12,15 @@ using namespace MMU;
 namespace DBI::A64 {
 
 #define PAGE_BITS 12
+#define WRITE_SPEC_BITS 3
+#define READ_SPEC_BITS 3
 
     enum PageAttrs {
         Read        = 1 << 0,
         Write       = 1 << 1,
         Execute     = 1 << 2,
-        WriteSpec   = 1 << 3
+        WriteSpec   = 1 << WRITE_SPEC_BITS,
+        ReadSpec    = 1 << READ_SPEC_BITS
     };
 
     union PTE {

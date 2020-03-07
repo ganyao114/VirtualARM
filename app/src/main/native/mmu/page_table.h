@@ -70,7 +70,7 @@ namespace MMU {
         using Table = VAddr*;
         using FinalTable = PTE*;
 
-        MultiLevelPageTable(u8 page_bits, u8 addr_width) : page_bits_(page_bits), addr_width_(addr_width) {
+        MultiLevelPageTable(u8 page_bits, u8 addr_width, bool tlb_per_thread = false) : page_bits_(page_bits), addr_width_(addr_width) {
             pte_bits_ = addr_width_ - page_bits_;
             if (pte_bits_ >= 48 && pte_bits_ % 3 == 0) {
                 // 3级页表
@@ -81,7 +81,9 @@ namespace MMU {
             pte_bits_ >>= level_;
             pte_size_ = 1ULL << pte_bits_;
             pages_.resize(pte_size_);
-            tlb_ = SharedPtr<TLB<AddrType, PTE>>(new TLB<AddrType, PTE>(page_bits_, 16));
+            if (!tlb_per_thread) {
+                tlb_ = SharedPtr<TLB<AddrType, PTE>>(new TLB<AddrType, PTE>(page_bits_, 16));
+            }
         }
 
         u8 GetPteBits() const {
@@ -127,7 +129,9 @@ namespace MMU {
                     }
                     auto pte_index = BitRange<AddrType>(all_page_bits, 0, pte_bits_ - 1);
                     final_table[pte_index] = pte;
-                    tlb_->CachePage(vaddr, pte);
+                    if (tlb_) {
+                        tlb_->CachePage(vaddr, pte);
+                    }
                     break;
                 }
             }
@@ -154,7 +158,9 @@ namespace MMU {
                     }
                     auto pte_index = BitRange<AddrType>(all_page_bits, 0, pte_bits_ - 1);
                     final_table[pte_index] = {};
-                    tlb_->ClearPageCache(vaddr);
+                    if (tlb_) {
+                        tlb_->ClearPageCache(vaddr);
+                    }
                     break;
                 }
             }
