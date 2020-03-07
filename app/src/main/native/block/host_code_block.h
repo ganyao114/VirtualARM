@@ -69,17 +69,20 @@ namespace Code {
         };
 
         struct DispatcherTable {
-            Dispatcher dispatchers_[MAX_BUFFER];
+            Dispatcher *dispatchers_;
         };
+
+#define BLOCK_SIZE_A64 16 * 1024 * 1024
 
         class CodeBlock : public BaseBlock {
         public:
-            CodeBlock();
+            CodeBlock(u32 block_size = BLOCK_SIZE_A64);
             virtual ~CodeBlock();
 
             void GenDispatcher(Buffer &buffer);
 
         protected:
+            u32 dispatcher_count_;
             DispatcherTable *dispatcher_table_;
         };
 

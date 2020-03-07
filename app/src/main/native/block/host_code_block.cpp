@@ -41,8 +41,6 @@ Buffer &BaseBlock::GetBuffer(u16 id) {
     return buffers_[id];
 }
 
-#define BLOCK_SIZE_A64 32 * 1024 * 1024
-
 static VAddr MapCodeMemory(u32 size) {
     return reinterpret_cast<VAddr>(mmap(0, size, PROT_READ | PROT_WRITE | PROT_EXEC,
                                         MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED,
@@ -53,8 +51,9 @@ static void UnMapCodeMemory(VAddr start, u32 size) {
     munmap(reinterpret_cast<void *>(start), size);
 }
 
-A64::CodeBlock::CodeBlock() : BaseBlock(MapCodeMemory(BLOCK_SIZE_A64), BLOCK_SIZE_A64) {
+A64::CodeBlock::CodeBlock(u32 block_size) : BaseBlock(MapCodeMemory(block_size), block_size) {
     // init dispatcher table
+    dispatcher_count_ = std::min<u32>(block_size >> 8, UINT16_MAX);
     dispatcher_table_ = reinterpret_cast<DispatcherTable *>(start_);
     current_offset_ = sizeof(DispatcherTable) >> 2;
 }
@@ -64,6 +63,7 @@ A64::CodeBlock::~CodeBlock() {
 }
 
 void A64::CodeBlock::GenDispatcher(Buffer &buffer) {
+    assert(buffer.id_ < dispatcher_count_);
     auto delta = GetBufferStart(buffer) - reinterpret_cast<VAddr >(&dispatcher_table_->dispatchers_[buffer.id_].instr_direct_branch_);
     // B offset
     dispatcher_table_->dispatchers_[buffer.id_].instr_direct_branch_ = 0x14000000 | (0x03ffffff & (static_cast<u32>(delta) >> 2));
