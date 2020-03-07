@@ -122,7 +122,7 @@ void Context::FindForwardTarget(u8 reg_target) {
         __ B(&label_end);
         // can not found table
         __ Bind(&miss_target);
-        __ Ldr(rt, MemOperand(REG_CTX, OFFSET_CTX_A64_FORWARD));
+        __ Str(rt, MemOperand(REG_CTX, OFFSET_CTX_A64_FORWARD));
         PopX<2>(tmp);
         __ Bl(&gen_code);
         __ Ldr(rt, MemOperand(REG_CTX, OFFSET_CTX_A64_FORWARD));
