@@ -24,11 +24,13 @@ namespace DBI::A64 {
     class Context : public BaseObject {
     public:
 
-        Context(const Register &reg_ctx);
+        Context(const Register &reg_ctx, const Register &reg_forward);
+
         virtual ~Context();
 
-        template <u8 temp_count>
-        void WrapContext(std::function<void(std::array<Register, temp_count>)> wrap, std::initializer_list<Register> effect_regs) {
+        template<u8 temp_count>
+        void WrapContext(std::function<void(std::array<Register, temp_count>)> wrap,
+                         std::initializer_list<Register> effect_regs = {}) {
             auto temp_regs = GetTmpRegisters<temp_count>(effect_regs);
             LoadContext();
             PushX<temp_count>(temp_regs);
@@ -37,14 +39,15 @@ namespace DBI::A64 {
             ClearContext();
         }
 
-        template <u8 temp_count>
-        std::array<Register, temp_count> GetTmpRegisters(std::initializer_list<Register> effect_regs) {
+        template<u8 temp_count>
+        std::array<Register, temp_count>
+        GetTmpRegisters(std::initializer_list<Register> effect_regs = {}) {
             std::array<Register, temp_count> temps;
             int index = 0;
-            for (int i = 0; i < 30; ++i) {
+            for (int i = 0; i < 29; ++i) {
                 if (index == temp_count - 1)
                     break;
-                if (i == REG_CTX.GetCode())
+                if (i == reg_ctx_.GetCode())
                     continue;
                 bool need_skip{false};
                 for (auto effect: effect_regs) {
@@ -62,42 +65,53 @@ namespace DBI::A64 {
         }
 
         virtual void LoadContext() {};
+
         virtual void ClearContext() {};
 
-        template <u8 size>
+        template<u8 size>
         void PushX(std::array<Register, size> &xregs) {
             int index = 0;
             while (index < size) {
                 // could stp
-                if ((index + 1 < size) && (xregs[index + 1].GetCode() - xregs[index].GetCode() == 1)) {
-                    __ Stp(xregs[index], xregs[index + 1], MemOperand(REG_CTX, OFFSET_CTX_A64_CPU_REG + xregs[index].GetCode()));
+                if ((index + 1 < size) &&
+                    (xregs[index + 1].GetCode() - xregs[index].GetCode() == 1) &&
+                    (xregs[index].GetCode() % 2 == 0)) {
+                    __ Stp(xregs[index], xregs[index + 1],
+                           MemOperand(reg_ctx_, OFFSET_CTX_A64_CPU_REG + xregs[index].GetCode()));
                     index += 2;
                 } else {
-                    __ Str(xregs[index], MemOperand(REG_CTX, OFFSET_CTX_A64_CPU_REG + xregs[index].GetCode()));
+                    __ Str(xregs[index],
+                           MemOperand(reg_ctx_, OFFSET_CTX_A64_CPU_REG + xregs[index].GetCode()));
                     index += 1;
                 }
             }
         }
 
-        template <u8 size>
+        template<u8 size>
         void PopX(std::array<Register, size> &xregs) {
             int index = 0;
             while (index < size) {
                 // could stp
-                if ((index + 1 < size) && (xregs[index + 1].GetCode() - xregs[index].GetCode() == 1)) {
-                    __ Ldp(xregs[index], xregs[index + 1], MemOperand(REG_CTX, OFFSET_CTX_A64_CPU_REG + xregs[index].GetCode()));
+                if ((index + 1 < size) &&
+                    (xregs[index + 1].GetCode() - xregs[index].GetCode() == 1) &&
+                    (xregs[index].GetCode() % 2 == 0)) {
+                    __ Ldp(xregs[index], xregs[index + 1],
+                           MemOperand(reg_ctx_, OFFSET_CTX_A64_CPU_REG + xregs[index].GetCode()));
                     index += 2;
                 } else {
-                    __ Ldr(xregs[index], MemOperand(REG_CTX, OFFSET_CTX_A64_CPU_REG + xregs[index].GetCode()));
+                    __ Ldr(xregs[index],
+                           MemOperand(reg_ctx_, OFFSET_CTX_A64_CPU_REG + xregs[index].GetCode()));
                     index += 1;
                 }
             }
         }
 
         void PushX(Register reg1, Register reg2 = NoReg);
+
         void PopX(Register reg1, Register reg2 = NoReg);
 
         void CheckSuspend(Register tmp);
+
         void SavePc(VAddr pc, Register tmp);
 
         const CPU::A64::CPUContext &GetContext() const;
@@ -105,29 +119,40 @@ namespace DBI::A64 {
         void LoadFromContext(Register target, VAddr offset);
 
         VAddr GetCurPc() const;
+
         void SetCurPc(VAddr cur_pc);
 
         void SetSuspendFlag(bool suspend);
 
         virtual void GetSp(u8 target) {};
+
         virtual void GetPc(u8 target) {};
 
         //sysreg
         void ReadTPIDR(u8 target);
+
         void ReadTPIDRRO(u8 target);
 
         // context switch
-        virtual void SaveContextFull() {};
-        virtual void RestoreContextFull() {};
+        virtual void SaveContextFull();
+
+        virtual void RestoreContextFull();
+
+        virtual void SaveContextCallerSaved();
+
+        virtual void RestoreContextCallerSaved();
+
 
         void FindForwardTarget(u8 reg_target);
+
         void FindForwardTarget(VAddr const_target);
 
         CPU::A64::CPUContext context_;
         VAddr cur_pc_;
 
     protected:
-        const Register &REG_CTX;
+        const Register &reg_ctx_;
+        const Register &reg_forward_;
         MacroAssembler masm_;
         u64 suspend_addr_;
         SharedPtr<FindTable<VAddr>> code_find_table_;
@@ -136,21 +161,21 @@ namespace DBI::A64 {
     class ContextNoMemTrace : public Context {
     public:
         void LoadContext() override;
+
         void ClearContext() override;
 
     protected:
 
         void PreDispatch();
+
         void PostDispatch();
 
     public:
         ContextNoMemTrace();
 
         void GetSp(u8 target) override;
-        void GetPc(u8 target) override;
 
-        void SaveContextFull() override;
-        void RestoreContextFull() override;
+        void GetPc(u8 target) override;
     };
 
     class ContextWithMemTrace : public Context {
@@ -160,11 +185,13 @@ namespace DBI::A64 {
         void LookupTLB(u8 reg_addr);
 
         void LookupFlatPageTable(u8 addr_reg);
+
         void LookupFlatPageTable(VAddr const_addr, u8 reg);
 
         void LookupMultiLevelPageTable(u8 addr_reg);
 
         void CheckReadSpec(Register pte_reg, Register offset_reg);
+
         void CheckWriteSpec(Register pte_reg, Register offset_reg);
 
     protected:

@@ -106,7 +106,9 @@ namespace CPU::A64 {
     };
 
     struct CPUContext {
-        Reg cpu_registers[31];
+        Reg cpu_registers[29];
+        Reg fp; // x29
+        Reg lr; // x30
         u64 sp;
         u64 pc;
         PSTATE pstate;
