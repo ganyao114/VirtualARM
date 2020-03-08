@@ -79,12 +79,17 @@ namespace Code {
             CodeBlock(u32 block_size = BLOCK_SIZE_A64);
             virtual ~CodeBlock();
 
+            Buffer &AllocCodeBuffer(VAddr source, u32 size) override;
+
             void GenDispatcher(Buffer &buffer);
+            VAddr GetDispatcherAddr(Buffer &buffer);
 
         protected:
             u32 dispatcher_count_;
             DispatcherTable *dispatcher_table_;
         };
+
+        using CodeBlockRef = SharedPtr<CodeBlock>;
 
     }
 

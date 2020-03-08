@@ -28,7 +28,17 @@ namespace Code {
             tables_.resize(table_count_);
         }
 
-        void FillCodeAddress(AddrType vaddr, VAddr target);
+        void FillCodeAddress(AddrType vaddr, VAddr target) {
+            AddrType index = BitRange<AddrType>(vaddr >> align_bits_, CODE_CACHE_HASH_BITS + redun_bits, sizeof(AddrType) - addr_width_ - 1);
+            LockGuard guard(lock_);
+            SharedPtr<Table> table = tables_[index];
+            if (table == nullptr) {
+                table = SharedPtr<Table>(new Table(addr_width_));
+                tables_[index] = table;
+                table_entries_[index] = table->GetHashEntryPtr();
+            }
+            table->Add(vaddr, target);
+        }
 
         VAddr TableEntryPtr() {
             return table_entries_.data();
@@ -43,8 +53,9 @@ namespace Code {
         u8 table_bits_;
         u32 table_count_;
         u8 align_bits_;
-        std::vector<HashEntry<AddrType, VAddr>**> table_entries_;
+        std::vector<HashEntry<AddrType, VAddr>*> table_entries_;
         std::vector<SharedPtr<Table>> tables_;
+        std::mutex lock_;
     };
 
 }

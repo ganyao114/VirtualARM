@@ -341,3 +341,5 @@ using class_type_t = typename FunctionInfo<Function>::class_type;
  */
 template <typename Function>
 using equivalent_function_type_t = typename FunctionInfo<Function>::equivalent_function_type;
+
+void ClearCachePlatform(VAddr start, VAddr size);

@@ -38,3 +38,9 @@ int CountLeadingZerosFallBack(uint64_t value, int width) {
     count += (value == 0);
     return count;
 }
+
+void ClearCachePlatform(VAddr start, VAddr size) {
+#if defined(__AAECH64__)
+    __clear_cache(start, size);
+#endif
+}

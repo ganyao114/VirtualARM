@@ -7,6 +7,66 @@
 
 using namespace DBI::A64;
 
+static thread_local SharedPtr<Context> current_;
+
+LabelHolder::LabelHolder(MacroAssembler &masm) : masm_(masm) {}
+
+LabelHolder::~LabelHolder() {
+    for (auto label : labels_) {
+        delete label;
+    }
+}
+
+void LabelHolder::SetDestBuffer(VAddr addr) {
+    dest_buffer_start_ = addr;
+}
+
+Label *LabelHolder::AllocLabel() {
+    auto label = new Label();
+    labels_.push_back(label);
+    return label;
+}
+
+Label *LabelHolder::GetDispatcherLabel() {
+    return &dispatcher_label_;
+}
+
+Label *LabelHolder::GetPageLookupLabel() {
+    return &page_lookup_label_;
+}
+
+Label *LabelHolder::GetCallSvcLabel() {
+    return &call_svc_label_;
+}
+
+Label *LabelHolder::GetSpecLabel() {
+    return &spec_label_;
+}
+
+void LabelHolder::BindDispatcherTrampoline(VAddr addr) {
+    assert(dest_buffer_start_);
+    ptrdiff_t offset = dest_buffer_start_ - addr;
+    __ BindToOffset(&dispatcher_label_, offset);
+}
+
+void LabelHolder::BindPageLookupTrampoline(VAddr addr) {
+    assert(dest_buffer_start_);
+    ptrdiff_t offset = dest_buffer_start_ - addr;
+    __ BindToOffset(&page_lookup_label_, offset);
+}
+
+void LabelHolder::BindCallSvcTrampoline(VAddr addr) {
+    assert(dest_buffer_start_);
+    ptrdiff_t offset = dest_buffer_start_ - addr ;
+    __ BindToOffset(&call_svc_label_, offset);
+}
+
+void LabelHolder::BindSpecTrampoline(VAddr addr) {
+    assert(dest_buffer_start_);
+    ptrdiff_t offset = dest_buffer_start_ - addr;
+    __ BindToOffset(&spec_label_, offset);
+}
+
 Context::Context(const Register &reg_ctx, const Register &reg_forward)
         : masm_{}, reg_ctx_{reg_ctx}, reg_forward_(reg_forward) {
     suspend_addr_ = reinterpret_cast<u64>(static_cast<u64 *>(mmap(0, PAGE_SIZE, PROT_READ,
@@ -15,13 +75,43 @@ Context::Context(const Register &reg_ctx, const Register &reg_forward)
                                                                   -1, 0)));
     context_.suspend_flag = suspend_addr_;
     code_find_table_ = SharedPtr<FindTable<VAddr>>(new FindTable<VAddr>(48, 2));
+    current_ = this;
 }
 
 Context::~Context() {
     munmap(reinterpret_cast<void *>(suspend_addr_), PAGE_SIZE);
 }
 
-const CPU::A64::CPUContext &Context::GetContext() const {
+void Context::SetCodeCachePosition(VAddr addr) {
+    cursor_.origin_code_start_ = addr;
+    cursor_.label_holder_ = SharedPtr<LabelHolder>(new LabelHolder(masm_));
+}
+
+void Context::FlushCodeCache(CodeBlockRef block) {
+    assert(cursor_.origin_code_start_ > 0);
+    auto buffer = block->AllocCodeBuffer(cursor_.origin_code_start_,
+                                         static_cast<u32>(__ GetBuffer()->GetSizeInBytes()));
+    auto buffer_start = block->GetBufferStart(buffer);
+    cursor_.label_holder_->SetDestBuffer(buffer_start);
+    // Fill Trampolines addr
+    cursor_.label_holder_->BindDispatcherTrampoline(0);
+    cursor_.label_holder_->BindPageLookupTrampoline(0);
+    cursor_.label_holder_->BindCallSvcTrampoline(0);
+    cursor_.label_holder_->BindSpecTrampoline(0);
+    __ FinalizeCode();
+    std::memcpy(reinterpret_cast<void *>(buffer_start), __ GetBuffer()->GetStartAddress<void *>(),
+                __ GetBuffer()->GetSizeInBytes());
+    ClearCachePlatform(buffer_start, __ GetBuffer()->GetSizeInBytes());
+    code_find_table_->FillCodeAddress(cursor_.origin_code_start_, buffer_start);
+    __ Reset();
+    cursor_ = {};
+}
+
+SharedPtr<Context>& Context::Current() {
+    return current_;
+}
+
+const CPU::A64::CPUContext &Context::GetCPUContext() const {
     return context_;
 }
 
@@ -37,6 +127,13 @@ void Context::SetSuspendFlag(bool suspend) {
     mprotect(reinterpret_cast<void *>(suspend_addr_), PAGE_SIZE, suspend ? PROT_NONE : PROT_READ);
 }
 
+void Context::Emit(u32 instr) {
+    __ dci(instr);
+}
+
+Label *Context::Label() {
+    return cursor_.label_holder_->AllocLabel();
+}
 
 void Context::PushX(Register reg1, Register reg2) {
     assert(reg1.GetCode() != reg_ctx_.GetCode() && reg2.GetCode() != reg_ctx_.GetCode());
@@ -103,34 +200,37 @@ void Context::ReadTPIDRRO(u8 target) {
 void Context::FindForwardTarget(u8 reg_target) {
     auto rt = XRegister::GetXRegFromCode(reg_target);
     auto wrap = [this, rt](std::array<Register, 2> tmp) -> void {
-        Label miss_target, label_loop, label_end, gen_code;
+        auto *miss_target = Label();
+        auto *label_loop = Label();
+        auto *label_end = Label();
+        auto *gen_code = cursor_.label_holder_->GetDispatcherLabel();
         // Find hash table
         __ Ldr(tmp[0], MemOperand(reg_ctx_, OFFSET_CTX_A64_DISPATCHER_TABLE));
         __ Mov(tmp[1], Operand(rt, LSR, CODE_CACHE_HASH_BITS));
         __ Bfc(tmp[1], code_find_table_->TableBits(),
                sizeof(VAddr) * 8 - code_find_table_->TableBits());
         __ Ldr(tmp[0], MemOperand(tmp[0], tmp[1], LSL, 3));
-        __ Cbz(tmp[0], &miss_target);
+        __ Cbz(tmp[0], miss_target);
         __ And(tmp[1], rt, (CODE_CACHE_HASH_SIZE - CODE_CACHE_HASH_OVERP) << 2);
         // 2 + 2 = 4 = 16字节 = Entry 大小
         __ Adds(tmp[0], tmp[0], Operand(tmp[1], LSL, 2));
-        __ Bind(&label_loop);
+        __ Bind(label_loop);
         __ Ldr(tmp[1], MemOperand(tmp[0], 16, PostIndex));
-        __ Cbz(tmp[1], &miss_target);
+        __ Cbz(tmp[1], miss_target);
         __ Sub(tmp[1], tmp[1], rt);
-        __ Cbnz(tmp[1], &label_loop);
+        __ Cbnz(tmp[1], label_loop);
         // find target
         __ Ldr(rt, MemOperand(tmp[0], -8, PreIndex));
-        __ B(&label_end);
+        __ B(label_end);
         // can not found table
-        __ Bind(&miss_target);
+        __ Bind(miss_target);
         __ Str(rt, MemOperand(reg_ctx_, OFFSET_CTX_A64_FORWARD));
         PopX<2>(tmp);
         PushX(lr);
-        __ Bl(&gen_code);
+        __ Bl(gen_code);
         PopX(lr);
         __ Ldr(rt, MemOperand(reg_ctx_, OFFSET_CTX_A64_FORWARD));
-        __ Bind(&label_end);
+        __ Bind(label_end);
     };
     WrapContext<2>(wrap, {rt});
 }
@@ -297,6 +397,10 @@ void Context::RestoreContextCallerSaved() {
     WrapContext<1>(wrap);
 }
 
+void Context::CodeCacheMissStub() {
+
+}
+
 
 ContextNoMemTrace::ContextNoMemTrace() : Context(TMP1, TMP0) {
     HOST_TLS[CTX_TLS_SLOT] = &context_;
@@ -378,7 +482,9 @@ void ContextWithMemTrace::LookupFlatPageTable(VAddr const_addr, u8 reg) {
 void ContextWithMemTrace::LookupTLB(u8 reg_addr) {
     auto rt = XRegister::GetXRegFromCode(reg_addr);
     auto wrap = [this, rt](std::array<Register, 3> tmp) -> void {
-        Label label_hit, label_end, label_lookup_page_table;
+        auto label_hit = Label();
+        auto label_end = Label();
+        auto label_lookup_page_table = cursor_.label_holder_->GetPageLookupLabel();
         auto tmp1 = tmp[0];
         auto tmp2 = tmp[1];
         auto tmp3 = tmp[2];
@@ -390,19 +496,19 @@ void ContextWithMemTrace::LookupTLB(u8 reg_addr) {
         __ Ldr(tmp3, MemOperand(tmp1));
         __ Mov(tmp2, Operand(rt, LSR, page_bits_));
         __ Sub(tmp3, tmp3, tmp2);
-        __ Cbz(tmp3, &label_hit);
+        __ Cbz(tmp3, label_hit);
         // miss cache
         __ Str(tmp2, MemOperand(reg_ctx_, OFFSET_CTX_A64_QUERY_PAGE));
         PopX<3>(tmp);
         PushX(lr);
-        __ Bl(&label_lookup_page_table);
+        __ Bl(label_lookup_page_table);
         PopX(lr);
         __ Ldr(rt, MemOperand(reg_ctx_, OFFSET_CTX_A64_QUERY_PAGE));
-        __ B(&label_end);
+        __ B(label_end);
         // hit, load pte
-        __ Bind(&label_hit);
+        __ Bind(label_hit);
         __ Ldr(rt, MemOperand(tmp1, 8));
-        __ Bind(&label_end);
+        __ Bind(label_end);
     };
     WrapContext<3>(wrap, {rt});
 }
@@ -412,21 +518,23 @@ void ContextWithMemTrace::LookupMultiLevelPageTable(u8 addr_reg) {
 }
 
 void ContextWithMemTrace::CheckReadSpec(Register pte_reg, Register offset_reg) {
-    Label label_skip, label_hook;
-    __ Tbz(pte_reg, READ_SPEC_BITS, &label_skip);
+    auto label_skip = Label();
+    auto label_hook = cursor_.label_holder_->GetSpecLabel();
+    __ Tbz(pte_reg, READ_SPEC_BITS, label_skip);
     // go hook
     PushX(lr);
-    __ Bl(&label_hook);
+    __ Bl(label_hook);
     PopX(lr);
-    __ Bind(&label_skip);
+    __ Bind(label_skip);
 }
 
 void ContextWithMemTrace::CheckWriteSpec(Register pte_reg, Register offset_reg) {
-    Label label_skip, label_hook;
-    __ Tbz(pte_reg, WRITE_SPEC_BITS, &label_skip);
+    auto label_skip = Label();
+    auto label_hook = cursor_.label_holder_->GetSpecLabel();
+    __ Tbz(pte_reg, WRITE_SPEC_BITS, label_skip);
     // go hook
     PushX(lr);
-    __ Bl(&label_hook);
+    __ Bl(label_hook);
     PopX(lr);
-    __ Bind(&label_skip);
+    __ Bind(label_skip);
 }

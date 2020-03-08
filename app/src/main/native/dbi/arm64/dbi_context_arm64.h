@@ -9,9 +9,11 @@
 #include <base/marcos.h>
 #include "block/code_find_table.h"
 #include "dbi_mmu_arm64.h"
+#include "block/host_code_block.h"
 
 using namespace vixl::aarch64;
 using namespace Code;
+using namespace Code::A64;
 
 namespace DBI::A64 {
 
@@ -21,12 +23,48 @@ namespace DBI::A64 {
 #define TMP1 x16
 #define HOST_TLS ({ void** __val; __asm__("mrs %0, tpidr_el0" : "=r"(__val)); __val; })
 
+    class LabelHolder : public BaseObject {
+    public:
+
+        LabelHolder(MacroAssembler &masm);
+        virtual ~LabelHolder();
+
+        void SetDestBuffer(VAddr addr);
+
+        Label *AllocLabel();
+        Label *GetDispatcherLabel();
+        Label *GetPageLookupLabel();
+        Label *GetCallSvcLabel();
+        Label *GetSpecLabel();
+        void BindDispatcherTrampoline(VAddr addr);
+        void BindPageLookupTrampoline(VAddr addr);
+        void BindCallSvcTrampoline(VAddr addr);
+        void BindSpecTrampoline(VAddr addr);
+    private:
+        VAddr dest_buffer_start_;
+        MacroAssembler &masm_;
+        std::list<Label*> labels_;
+        Label dispatcher_label_;
+        Label page_lookup_label_;
+        Label call_svc_label_;
+        Label spec_label_;
+    };
+
     class Context : public BaseObject {
     public:
 
         Context(const Register &reg_ctx, const Register &reg_forward);
 
         virtual ~Context();
+
+        static SharedPtr<Context> &Current();
+
+        void SetCodeCachePosition(VAddr addr);
+        void FlushCodeCache(CodeBlockRef block);
+
+        void Emit(u32 instr);
+
+        Label *Label();
 
         template<u8 temp_count>
         void WrapContext(std::function<void(std::array<Register, temp_count>)> wrap,
@@ -114,7 +152,7 @@ namespace DBI::A64 {
 
         void SavePc(VAddr pc, Register tmp);
 
-        const CPU::A64::CPUContext &GetContext() const;
+        const CPU::A64::CPUContext &GetCPUContext() const;
 
         void LoadFromContext(Register target, VAddr offset);
 
@@ -142,17 +180,22 @@ namespace DBI::A64 {
 
         virtual void RestoreContextCallerSaved();
 
-
         void FindForwardTarget(u8 reg_target);
 
         void FindForwardTarget(VAddr const_target);
 
-        CPU::A64::CPUContext context_;
-        VAddr cur_pc_;
+        // trampolines
+        void CodeCacheMissStub();
 
     protected:
+        CPU::A64::CPUContext context_;
+        VAddr cur_pc_;
         const Register &reg_ctx_;
         const Register &reg_forward_;
+        struct {
+            VAddr origin_code_start_;
+            SharedPtr<LabelHolder> label_holder_;
+        } cursor_;
         MacroAssembler masm_;
         u64 suspend_addr_;
         SharedPtr<FindTable<VAddr>> code_find_table_;
