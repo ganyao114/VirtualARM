@@ -171,7 +171,7 @@ namespace MMU {
             assert(vaddr % (1 << page_bits_) == 0);
             if (tlb_) {
                 PTE pte = tlb_->GetPage(vaddr);
-                if (pte) {
+                if (pte != PTE{}) {
                     return pte;
                 }
             }

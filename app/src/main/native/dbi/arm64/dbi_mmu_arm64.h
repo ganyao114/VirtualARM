@@ -13,7 +13,7 @@ namespace DBI::A64 {
 
 #define PAGE_BITS 12
 #define WRITE_SPEC_BITS 3
-#define READ_SPEC_BITS 3
+#define READ_SPEC_BITS 4
 
     enum PageAttrs {
         Read        = 1 << 0,
@@ -24,11 +24,20 @@ namespace DBI::A64 {
     };
 
     union PTE {
+        PTE() {
+           target_ = 0;
+        }
         VAddr target_;
         struct {
             VAddr attrs_:sizeof(VAddr) * 8 - PAGE_BITS;
             VAddr index_:PAGE_BITS;
         };
+        bool operator==(const PTE& rhs) const {
+            return rhs.target_ == target_;
+        }
+        bool operator!=(const PTE& rhs) const {
+            return !operator==(rhs);
+        }
     };
 
     using PageTable = MultiLevelPageTable<VAddr, PTE>;
