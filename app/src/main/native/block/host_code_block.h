@@ -37,12 +37,14 @@ namespace Code {
 
         BaseBlock(VAddr start, VAddr size);
 
+        VAddr GetBufferStart(u16 id);
         VAddr GetBufferStart(Buffer &buffer);
         VAddr GetBufferEnd(Buffer &buffer);
 
         Buffer &GetBuffer(u16 id);
 
         virtual Buffer &AllocCodeBuffer(VAddr source, u32 size);
+        void Align(u32 size);
         virtual bool SaveToDisk(std::string path);
     protected:
         VAddr start_;

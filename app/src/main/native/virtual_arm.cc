@@ -5,11 +5,13 @@
 #include <jni.h>
 #include "virtual_arm.h"
 #include "asm/arm64/instruction_decode.h"
+#include "asm/arm64/cpu_arm64.h"
 #include "frontend/ir/instruction_ir.h"
 #include "dbi/arm64/dbi_visitor_arm64.h"
 
 
 using namespace Instruction::A64;
+using namespace CPU::A64;
 using namespace Instruction::IR;
 
 
@@ -19,10 +21,6 @@ load_test(JNIEnv *env, jobject instance) {
     FastBranchDecoder decoder;
 //    InstrA64Ref instr = decoder.Decode(reinterpret_cast<InstrA64 *>((VAddr)rename + 24));
     assert(sizeof(Argument) == sizeof(Imm128));
-//    DBI::A64::Visitor visitor;
-//    Dispatcher<DBI::A64::Visitor> dispatcher(visitor);
-//    AArch64Inst inst(0);
-//    dispatcher.Call(OpcodeA64::B, inst);
 }
 
 static bool registerNativeMethods(JNIEnv *env, const char *className, JNINativeMethod *jniMethods, int methods) {

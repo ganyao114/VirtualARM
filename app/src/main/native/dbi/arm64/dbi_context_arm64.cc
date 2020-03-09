@@ -4,6 +4,7 @@
 
 #include <sys/mman.h>
 #include "dbi_context_arm64.h"
+#include "dbi_trampolines_arm64.h"
 
 using namespace DBI::A64;
 
@@ -87,17 +88,19 @@ void Context::SetCodeCachePosition(VAddr addr) {
     cursor_.label_holder_ = SharedPtr<LabelHolder>(new LabelHolder(masm_));
 }
 
-void Context::FlushCodeCache(CodeBlockRef block) {
+void Context::FlushCodeCache(CodeBlockRef block, bool bind_stub) {
     assert(cursor_.origin_code_start_ > 0);
     auto buffer = block->AllocCodeBuffer(cursor_.origin_code_start_,
                                          static_cast<u32>(__ GetBuffer()->GetSizeInBytes()));
     auto buffer_start = block->GetBufferStart(buffer);
-    cursor_.label_holder_->SetDestBuffer(buffer_start);
-    // Fill Trampolines addr
-    cursor_.label_holder_->BindDispatcherTrampoline(0);
-    cursor_.label_holder_->BindPageLookupTrampoline(0);
-    cursor_.label_holder_->BindCallSvcTrampoline(0);
-    cursor_.label_holder_->BindSpecTrampoline(0);
+    if (bind_stub) {
+        cursor_.label_holder_->SetDestBuffer(buffer_start);
+        // Fill Trampolines addr
+        cursor_.label_holder_->BindDispatcherTrampoline(block->GetBufferStart(0));
+        cursor_.label_holder_->BindPageLookupTrampoline(block->GetBufferStart(1));
+        cursor_.label_holder_->BindCallSvcTrampoline(block->GetBufferStart(2));
+        cursor_.label_holder_->BindSpecTrampoline(block->GetBufferStart(3));
+    }
     __ FinalizeCode();
     std::memcpy(reinterpret_cast<void *>(buffer_start), __ GetBuffer()->GetStartAddress<void *>(),
                 __ GetBuffer()->GetSizeInBytes());
@@ -238,8 +241,8 @@ void Context::FindForwardTarget(u8 reg_target) {
 void Context::FindForwardTarget(VAddr const_target) {
 }
 
-void Context::SaveContextFull() {
-    auto wrap = [this](std::array<Register, 1> tmp) -> void {
+void Context::SaveContextFull(bool protect_lr) {
+    auto wrap = [this, protect_lr](std::array<Register, 1> tmp) -> void {
         // XRegs
         for (int i = 0; i < 30; i += 2) {
             if (i == reg_ctx_.GetCode()) {
@@ -255,7 +258,7 @@ void Context::SaveContextFull() {
         }
         // lr
         if (reg_ctx_.GetCode() != 30) {
-            __ Str(x30, MemOperand(reg_ctx_, 8 * 30));
+            __ Str(x30, MemOperand(reg_ctx_, protect_lr ? 8 * 30 : OFFSET_CTX_A64_TMP_LR));
         }
         // Sysregs
         __ Mrs(tmp[0], NZCV);
@@ -279,8 +282,8 @@ void Context::SaveContextFull() {
     WrapContext<1>(wrap);
 }
 
-void Context::RestoreContextFull() {
-    auto wrap = [this](std::array<Register, 1> tmp) -> void {
+void Context::RestoreContextFull(bool protect_lr) {
+    auto wrap = [this, protect_lr](std::array<Register, 1> tmp) -> void {
         // XRegs
         for (int i = 0; i < 30; i += 2) {
             if (i == reg_ctx_.GetCode()) {
@@ -296,7 +299,7 @@ void Context::RestoreContextFull() {
         }
         // lr
         if (reg_ctx_.GetCode() != 30) {
-            __ Ldr(x30, MemOperand(reg_ctx_, 8 * 30));
+            __ Ldr(x30, MemOperand(reg_ctx_, protect_lr ? 8 * 30 : OFFSET_CTX_A64_TMP_LR));
         }
         // Sysregs
         __ Ldr(tmp[0].W(), MemOperand(reg_ctx_, OFFSET_CTX_A64_PSTATE));
@@ -317,8 +320,8 @@ void Context::RestoreContextFull() {
     WrapContext<1>(wrap);
 }
 
-void Context::SaveContextCallerSaved() {
-    auto wrap = [this](std::array<Register, 1> tmp) -> void {
+void Context::SaveContextCallerSaved(bool protect_lr) {
+    auto wrap = [this, protect_lr](std::array<Register, 1> tmp) -> void {
         // XRegs
         // x0 - x18
         for (int i = 0; i < 19; i += 2) {
@@ -335,7 +338,7 @@ void Context::SaveContextCallerSaved() {
         }
         // lr
         if (reg_ctx_.GetCode() != 30) {
-            __ Str(x30, MemOperand(reg_ctx_, 8 * 30));
+            __ Str(x30, MemOperand(reg_ctx_, protect_lr ? 8 * 30 : OFFSET_CTX_A64_TMP_LR));
         }
         // Sysregs
         __ Mrs(tmp[0], NZCV);
@@ -359,8 +362,8 @@ void Context::SaveContextCallerSaved() {
     WrapContext<1>(wrap);
 }
 
-void Context::RestoreContextCallerSaved() {
-    auto wrap = [this](std::array<Register, 1> tmp) -> void {
+void Context::RestoreContextCallerSaved(bool protect_lr) {
+    auto wrap = [this, protect_lr](std::array<Register, 1> tmp) -> void {
         // XRegs
         for (int i = 0; i < 31; i += 2) {
             if (i == reg_ctx_.GetCode()) {
@@ -376,7 +379,7 @@ void Context::RestoreContextCallerSaved() {
         }
         // lr
         if (reg_ctx_.GetCode() != 30) {
-            __ Ldr(x30, MemOperand(reg_ctx_, 8 * 30));
+            __ Ldr(x30, MemOperand(reg_ctx_, protect_lr ? 8 * 30 : OFFSET_CTX_A64_TMP_LR));
         }
         // Sysregs
         __ Ldr(tmp[0].W(), MemOperand(reg_ctx_, OFFSET_CTX_A64_PSTATE));
@@ -397,10 +400,65 @@ void Context::RestoreContextCallerSaved() {
     WrapContext<1>(wrap);
 }
 
-void Context::CodeCacheMissStub() {
-
+void Context::CallSvc(u32 svc_num) {
+    auto wrap = [this, svc_num](std::array<Register, 1> tmp) -> void {
+        __ Mov(tmp[0], svc_num);
+        __ Str(tmp[0], MemOperand(reg_ctx_, OFFSET_CTX_A64_SVC_NUM));
+        PopX<1>(tmp);
+        PushX(lr);
+        __ Bl(cursor_.label_holder_->GetCallSvcLabel());
+        PopX(lr);
+    };
+    WrapContext<1>(wrap);
 }
 
+void Context::DispatherStub(CodeBlockRef block) {
+    __ Reset();
+    SaveContextCallerSaved();
+    __ Mov(x0, reinterpret_cast<VAddr>(CodeCacheDispatcherTrampoline));
+    __ Blr(x0);
+    RestoreContextCallerSaved();
+    auto stub_size = __ GetBuffer()->GetSizeInBytes();
+    auto buffer = block->AllocCodeBuffer(0, static_cast<u32>(stub_size));
+    std::memcpy(reinterpret_cast<void *>(block->GetBufferStart(buffer)), __ GetBuffer()->GetStartAddress<void *>(), stub_size);
+    __ Reset();
+}
+
+void Context::PageLookupStub(CodeBlockRef block) {
+    __ Reset();
+    SaveContextCallerSaved();
+    __ Mov(x0, reinterpret_cast<VAddr>(PageLookupTrampoline));
+    __ Blr(x0);
+    RestoreContextCallerSaved();
+    auto stub_size = __ GetBuffer()->GetSizeInBytes();
+    auto buffer = block->AllocCodeBuffer(0, static_cast<u32>(stub_size));
+    std::memcpy(reinterpret_cast<void *>(block->GetBufferStart(buffer)), __ GetBuffer()->GetStartAddress<void *>(), stub_size);
+    __ Reset();
+}
+
+void Context::CallSvcStub(CodeBlockRef block) {
+    __ Reset();
+    SaveContextFull();
+    __ Mov(x0, reinterpret_cast<VAddr>(CallSvcTrampoline));
+    __ Blr(x0);
+    RestoreContextFull();
+    auto stub_size = __ GetBuffer()->GetSizeInBytes();
+    auto buffer = block->AllocCodeBuffer(0, static_cast<u32>(stub_size));
+    std::memcpy(reinterpret_cast<void *>(block->GetBufferStart(buffer)), __ GetBuffer()->GetStartAddress<void *>(), stub_size);
+    __ Reset();
+}
+
+void Context::SpecStub(CodeBlockRef block) {
+    __ Reset();
+    SaveContextCallerSaved();
+    __ Mov(x0, reinterpret_cast<VAddr>(SpecTrampoline));
+    __ Blr(x0);
+    RestoreContextCallerSaved();
+    auto stub_size = __ GetBuffer()->GetSizeInBytes();
+    auto buffer = block->AllocCodeBuffer(0, static_cast<u32>(stub_size));
+    std::memcpy(reinterpret_cast<void *>(block->GetBufferStart(buffer)), __ GetBuffer()->GetStartAddress<void *>(), stub_size);
+    __ Reset();
+}
 
 ContextNoMemTrace::ContextNoMemTrace() : Context(TMP1, TMP0) {
     HOST_TLS[CTX_TLS_SLOT] = &context_;

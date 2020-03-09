@@ -15,6 +15,12 @@ using namespace vixl::aarch64;
 using namespace Code;
 using namespace Code::A64;
 
+
+// TODO Code Invalid 粒度在于一个个 Block，那当某些线程仍跑在旧 Block 中时，新 Block 的改动被提交了，那么该线程仍会跑一段旧代码，syscall 后的代码较易复现
+/**
+ * 此种 Case 的解决办法在于将该 Block 的旧 Code Cache 中非生成部分置为非法指令
+ */
+
 namespace DBI::A64 {
 
 #define __ masm_.
@@ -60,7 +66,7 @@ namespace DBI::A64 {
         static SharedPtr<Context> &Current();
 
         void SetCodeCachePosition(VAddr addr);
-        void FlushCodeCache(CodeBlockRef block);
+        void FlushCodeCache(CodeBlockRef block, bool bind_stub = true);
 
         void Emit(u32 instr);
 
@@ -166,26 +172,28 @@ namespace DBI::A64 {
 
         virtual void GetPc(u8 target) {};
 
-        //sysreg
+        // sysreg
         void ReadTPIDR(u8 target);
-
         void ReadTPIDRRO(u8 target);
 
         // context switch
-        virtual void SaveContextFull();
+        virtual void SaveContextFull(bool protect_lr = false);
+        virtual void RestoreContextFull(bool protect_lr = false);
+        virtual void SaveContextCallerSaved(bool protect_lr = false);
+        virtual void RestoreContextCallerSaved(bool protect_lr = false);
 
-        virtual void RestoreContextFull();
-
-        virtual void SaveContextCallerSaved();
-
-        virtual void RestoreContextCallerSaved();
-
+        // brunch
         void FindForwardTarget(u8 reg_target);
-
         void FindForwardTarget(VAddr const_target);
 
+        // system
+        void CallSvc(u32 svc_num);
+
         // trampolines
-        void CodeCacheMissStub();
+        void DispatherStub(CodeBlockRef block);
+        void PageLookupStub(CodeBlockRef block);
+        void CallSvcStub(CodeBlockRef block);
+        void SpecStub(CodeBlockRef block);
 
     protected:
         CPU::A64::CPUContext context_;
@@ -196,7 +204,8 @@ namespace DBI::A64 {
             VAddr origin_code_start_;
             SharedPtr<LabelHolder> label_holder_;
         } cursor_;
-        MacroAssembler masm_;
+        // must pic code
+        MacroAssembler masm_{PositionIndependentCode};
         u64 suspend_addr_;
         SharedPtr<FindTable<VAddr>> code_find_table_;
     };

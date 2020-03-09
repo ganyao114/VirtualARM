@@ -29,6 +29,10 @@ VAddr BaseBlock::GetBufferStart(Buffer &buffer) {
     return start_ + buffer.offset_ << 2;
 }
 
+VAddr BaseBlock::GetBufferStart(u16 id) {
+    return GetBufferStart(GetBuffer(id));
+}
+
 VAddr BaseBlock::GetBufferEnd(Buffer &buffer) {
     return GetBufferStart(buffer) + buffer.size_ << 2;
 }
@@ -39,6 +43,11 @@ BaseBlock::BaseBlock(VAddr start, VAddr size) : start_(start), size_(size) {
 
 Buffer &BaseBlock::GetBuffer(u16 id) {
     return buffers_[id];
+}
+
+void BaseBlock::Align(u32 size) {
+    LockGuard lck(lock_);
+    current_offset_ = RoundUp(current_offset_, size);
 }
 
 static VAddr MapCodeMemory(u32 size) {

@@ -5,5 +5,8 @@
 #pragma once
 
 namespace DBI::A64 {
-    extern "C" void CodeCacheMissTrampoline();
+    extern "C" void CodeCacheDispatcherTrampoline();
+    extern "C" void PageLookupTrampoline();
+    extern "C" void CallSvcTrampoline();
+    extern "C" void SpecTrampoline();
 }

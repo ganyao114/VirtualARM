@@ -26,8 +26,8 @@ namespace DBI::A64 {
     union PTE {
         VAddr target_;
         struct {
-            VAddr index_:sizeof(VAddr) * 8 - PAGE_BITS;
-            VAddr attrs_:PAGE_BITS;
+            VAddr attrs_:sizeof(VAddr) * 8 - PAGE_BITS;
+            VAddr index_:PAGE_BITS;
         };
     };
 

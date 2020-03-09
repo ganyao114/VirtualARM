@@ -82,7 +82,7 @@ namespace CPU::A64 {
         u64 X;
         struct {
             u64 W : 32;
-            u64 R: 32;
+            u64 R : 32;
         };
     } Reg;
 
@@ -126,7 +126,7 @@ namespace CPU::A64 {
         VAddr suspend_flag;
         // help fields
         u64 forward;
-        u64 query_page;
+        u64 tmp_lr;
     };
 }
 
@@ -145,4 +145,6 @@ extern "C" const VAddr OFFSET_CTX_A64_TLB;
 extern "C" const VAddr OFFSET_CTX_A64_PAGE_TABLE;
 extern "C" const VAddr OFFSET_CTX_A64_SUSPEND_ADDR;
 extern "C" const VAddr OFFSET_CTX_A64_DISPATCHER_TABLE;
+extern "C" const VAddr OFFSET_CTX_A64_TMP_LR;
+extern "C" const VAddr OFFSET_CTX_A64_SVC_NUM;
 
