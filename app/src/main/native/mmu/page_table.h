@@ -78,7 +78,8 @@ namespace MMU {
             } else {
                 level_ = 2;
             }
-            pte_bits_ >>= level_;
+            assert(pte_bits_ % level_ == 0);
+            pte_bits_ /= level_;
             pte_size_ = 1ULL << pte_bits_;
             pages_.resize(pte_size_);
             if (!tlb_per_thread) {
@@ -107,7 +108,7 @@ namespace MMU {
         }
 
         void MapPage(AddrType vaddr, PTE &pte) {
-            assert(vaddr % (2 << page_bits_) == 0);
+            assert(vaddr % (1 << page_bits_) == 0);
             AddrType all_page_bits = BitRange<AddrType>(vaddr, page_bits_, sizeof(AddrType) - addr_width_ - 1);
             AddrType index;
             Table table = reinterpret_cast<Table>(pages_.data());
@@ -138,7 +139,7 @@ namespace MMU {
         }
 
         void UnMapPage(AddrType vaddr) {
-            assert(vaddr % (2 << page_bits_) == 0);
+            assert(vaddr % (1 << page_bits_) == 0);
             AddrType all_page_bits = BitRange<AddrType>(vaddr, page_bits_, sizeof(AddrType) - addr_width_ - 1);
             AddrType index;
             Table table = reinterpret_cast<Table>(pages_.data());
@@ -162,6 +163,37 @@ namespace MMU {
                         tlb_->ClearPageCache(vaddr);
                     }
                     break;
+                }
+            }
+        }
+
+        PTE GetPage(AddrType vaddr) {
+            assert(vaddr % (1 << page_bits_) == 0);
+            if (tlb_) {
+                PTE pte = tlb_->GetPage(vaddr);
+                if (pte) {
+                    return pte;
+                }
+            }
+            AddrType all_page_bits = BitRange<AddrType>(vaddr, page_bits_, sizeof(AddrType) - addr_width_ - 1);
+            AddrType index;
+            Table table = reinterpret_cast<Table>(pages_.data());
+            for (int i = 0; i < level_; ++i) {
+                index = BitRange<AddrType>(all_page_bits, pte_bits_ * (level_ - i - 1), pte_bits_ * (level_ - i) - 1);
+                if (i < level_ - 2) {
+                    auto tmp = reinterpret_cast<Table>(table[index]);
+                    if (tmp == nullptr) {
+                        return {};
+                    }
+                    table = tmp;
+                } else {
+                    //Final
+                    FinalTable final_table = reinterpret_cast<FinalTable>(table[index]);
+                    if (final_table == nullptr) {
+                        return {};
+                    }
+                    auto pte_index = BitRange<AddrType>(all_page_bits, 0, pte_bits_ - 1);
+                    return final_table[pte_index];
                 }
             }
         }

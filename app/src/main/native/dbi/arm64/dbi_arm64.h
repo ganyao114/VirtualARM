@@ -7,6 +7,8 @@
 
 namespace DBI::A64 {
 
+
+
     class CallBack {
         virtual void OnSpecWrite64(VAddr addr) {};
         virtual void OnSpecWrite32(VAddr addr) {};

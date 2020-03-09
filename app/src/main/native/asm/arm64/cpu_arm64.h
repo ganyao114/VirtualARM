@@ -118,6 +118,7 @@ namespace CPU::A64 {
         u64 tpidr;
         u64 tpidrro;
         // memory
+        VAddr host_sp;
         VAddr tlb;
         VAddr page_table;
         // dispatcher
@@ -147,4 +148,5 @@ extern "C" const VAddr OFFSET_CTX_A64_SUSPEND_ADDR;
 extern "C" const VAddr OFFSET_CTX_A64_DISPATCHER_TABLE;
 extern "C" const VAddr OFFSET_CTX_A64_TMP_LR;
 extern "C" const VAddr OFFSET_CTX_A64_SVC_NUM;
+extern "C" const VAddr OFFSET_CTX_A64_HOST_SP;
 

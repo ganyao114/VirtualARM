@@ -23,3 +23,4 @@ const VAddr OFFSET_CTX_A64_PAGE_TABLE = OFFSET_OF(CPUContext, page_table);
 const VAddr OFFSET_CTX_A64_SUSPEND_ADDR = OFFSET_OF(CPUContext, suspend_flag);
 const VAddr OFFSET_CTX_A64_DISPATCHER_TABLE = OFFSET_OF(CPUContext, dispatcher_table);
 const VAddr OFFSET_CTX_A64_TMP_LR = OFFSET_OF(CPUContext, tmp_lr);
+const VAddr OFFSET_CTX_A64_HOST_SP = OFFSET_OF(CPUContext, host_sp);

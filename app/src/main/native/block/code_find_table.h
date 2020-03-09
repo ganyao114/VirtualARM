@@ -41,7 +41,7 @@ namespace Code {
         }
 
         VAddr TableEntryPtr() {
-            return table_entries_.data();
+            return reinterpret_cast<VAddr>(table_entries_.data());
         }
 
         u8 TableBits() {

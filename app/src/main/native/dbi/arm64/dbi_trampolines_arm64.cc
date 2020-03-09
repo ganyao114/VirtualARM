@@ -10,7 +10,7 @@ void DBI::A64::CodeCacheDispatcherTrampoline() {
     auto brunch_vaddr = context.forward;
 }
 
-void DBI::A64::PageLookupTrampoline() {
+void DBI::A64::PageMissTrampoline() {
     auto context = Context::Current()->GetCPUContext();
     auto vaddr = context.forward;
 }

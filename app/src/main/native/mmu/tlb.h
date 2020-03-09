@@ -12,8 +12,8 @@ namespace MMU {
 
     template <typename AddrType, typename PTE>
     struct TLBEntry {
-        AddrType page_index_;
-        PTE pte_;
+        AddrType page_index_{};
+        PTE pte_{};
     };
 
     template <typename AddrType, typename PTE>
@@ -26,17 +26,30 @@ namespace MMU {
         }
 
         void CachePage(AddrType vaddr, PTE &pte) {
+            assert(vaddr % (1 << page_bits_) == 0);
             auto index = BitRange<AddrType>(vaddr, page_bits_, page_bits_ + tlb_bits_ - 1);
             tlb_table_[index] = {vaddr >> page_bits_, pte};
         }
 
+        PTE GetPage(AddrType vaddr) {
+            assert(vaddr % (1 << page_bits_) == 0);
+            auto index = BitRange<AddrType>(vaddr, page_bits_, page_bits_ + tlb_bits_ - 1);
+            auto &tlb_entry = tlb_table_[index];
+            if (tlb_entry.page_index_ == vaddr >> page_bits_) {
+                return tlb_entry.pte_;
+            } else {
+                return {};
+            }
+        }
+
         void ClearPageCache(AddrType vaddr) {
+            assert(vaddr % (1 << page_bits_) == 0);
             auto index = BitRange<AddrType>(vaddr, page_bits_, page_bits_ + tlb_bits_ - 1);
             tlb_table_[index] = {};
         }
 
         VAddr TLBTablePtr() {
-            return tlb_table_.data();
+            return reinterpret_cast<VAddr>(tlb_table_.data());
         }
 
         u8 TLBBits() const {

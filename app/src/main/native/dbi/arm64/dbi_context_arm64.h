@@ -28,6 +28,7 @@ namespace DBI::A64 {
 #define TMP0 x17
 #define TMP1 x16
 #define HOST_TLS ({ void** __val; __asm__("mrs %0, tpidr_el0" : "=r"(__val)); __val; })
+#define HOST_STACK_SIZE 1U << 20
 
     class LabelHolder : public BaseObject {
     public:
@@ -181,6 +182,8 @@ namespace DBI::A64 {
         virtual void RestoreContextFull(bool protect_lr = false);
         virtual void SaveContextCallerSaved(bool protect_lr = false);
         virtual void RestoreContextCallerSaved(bool protect_lr = false);
+        virtual void PrepareHostStack();
+        virtual void PrepareGuestStack();
 
         // brunch
         void FindForwardTarget(u8 reg_target);
@@ -191,13 +194,13 @@ namespace DBI::A64 {
 
         // trampolines
         void DispatherStub(CodeBlockRef block);
-        void PageLookupStub(CodeBlockRef block);
         void CallSvcStub(CodeBlockRef block);
         void SpecStub(CodeBlockRef block);
 
     protected:
         CPU::A64::CPUContext context_;
         VAddr cur_pc_;
+        VAddr host_stack_;
         const Register &reg_ctx_;
         const Register &reg_forward_;
         struct {
@@ -240,7 +243,7 @@ namespace DBI::A64 {
 
         void LookupFlatPageTable(VAddr const_addr, u8 reg);
 
-        void LookupMultiLevelPageTable(u8 addr_reg);
+        void PageLookupStub(CodeBlockRef block);
 
         void CheckReadSpec(Register pte_reg, Register offset_reg);
 
