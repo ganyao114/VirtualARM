@@ -445,6 +445,7 @@ void Context::DispatherStub(CodeBlockRef block) {
     auto buffer = block->AllocCodeBuffer(0);
     block->FlushCodeBuffer(buffer, static_cast<u32>(stub_size));
     std::memcpy(reinterpret_cast<void *>(block->GetBufferStart(buffer)), __ GetBuffer()->GetStartAddress<void *>(), stub_size);
+    ClearCachePlatform(block->GetBufferStart(buffer), stub_size);
     __ Reset();
 }
 
@@ -464,6 +465,7 @@ void Context::CallSvcStub(CodeBlockRef block) {
     auto buffer = block->AllocCodeBuffer(0);
     block->FlushCodeBuffer(buffer, static_cast<u32>(stub_size));
     std::memcpy(reinterpret_cast<void *>(block->GetBufferStart(buffer)), __ GetBuffer()->GetStartAddress<void *>(), stub_size);
+    ClearCachePlatform(block->GetBufferStart(buffer), stub_size);
     __ Reset();
 }
 
@@ -483,6 +485,7 @@ void Context::SpecStub(CodeBlockRef block) {
     auto buffer = block->AllocCodeBuffer(0);
     block->FlushCodeBuffer(buffer, static_cast<u32>(stub_size));
     std::memcpy(reinterpret_cast<void *>(block->GetBufferStart(buffer)), __ GetBuffer()->GetStartAddress<void *>(), stub_size);
+    ClearCachePlatform(block->GetBufferStart(buffer), stub_size);
     __ Reset();
 }
 
@@ -651,6 +654,7 @@ void ContextWithMemTrace::PageLookupStub(CodeBlockRef block) {
     auto buffer = block->AllocCodeBuffer(0);
     block->FlushCodeBuffer(buffer, static_cast<u32>(stub_size));
     std::memcpy(reinterpret_cast<void *>(block->GetBufferStart(buffer)), __ GetBuffer()->GetStartAddress<void *>(), stub_size);
+    ClearCachePlatform(block->GetBufferStart(buffer), stub_size);
     __ Reset();
 }
 

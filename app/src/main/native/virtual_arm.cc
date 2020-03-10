@@ -21,6 +21,9 @@ load_test(JNIEnv *env, jobject instance) {
     FastBranchDecoder decoder;
 //    InstrA64Ref instr = decoder.Decode(reinterpret_cast<InstrA64 *>((VAddr)rename + 24));
     assert(sizeof(Argument) == sizeof(Imm128));
+    CPUContext context;
+    context.cpu_registers[30].X = 0x111;
+    assert(context.lr.X == 0x111);
 }
 
 static bool registerNativeMethods(JNIEnv *env, const char *className, JNINativeMethod *jniMethods, int methods) {
