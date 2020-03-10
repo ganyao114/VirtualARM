@@ -41,6 +41,7 @@ add_library(virtual_arm SHARED
         dbi/arm64/dbi_context_arm64.cc
         dbi/arm64/dbi_mmu_arm64.cpp
         dbi/arm64/dbi_trampolines_arm64.cc
+        dbi/arm64/dbi_diskcache_loader.cc
         block/host_code_block.cpp
         block/code_find_table.cc
         mmu/page_table.cc

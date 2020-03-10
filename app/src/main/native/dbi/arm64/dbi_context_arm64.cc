@@ -94,8 +94,8 @@ void Context::SetCodeCachePosition(VAddr addr) {
 
 void Context::FlushCodeCache(CodeBlockRef block, bool bind_stub) {
     assert(cursor_.origin_code_start_ > 0);
-    auto buffer = block->AllocCodeBuffer(cursor_.origin_code_start_,
-                                         static_cast<u32>(__ GetBuffer()->GetSizeInBytes()));
+    auto buffer = block->AllocCodeBuffer(cursor_.origin_code_start_);
+    block->FlushCodeBuffer(buffer, static_cast<u32>(__ GetBuffer()->GetSizeInBytes()));
     auto buffer_start = block->GetBufferStart(buffer);
     if (bind_stub) {
         cursor_.label_holder_->SetDestBuffer(buffer_start);
@@ -116,6 +116,10 @@ void Context::FlushCodeCache(CodeBlockRef block, bool bind_stub) {
 
 SharedPtr<Context>& Context::Current() {
     return current_;
+}
+
+MacroAssembler &Context::Assembler() {
+    return masm_;
 }
 
 const CPU::A64::CPUContext &Context::GetCPUContext() const {
@@ -244,6 +248,13 @@ void Context::FindForwardTarget(u8 reg_target) {
 
 void Context::FindForwardTarget(VAddr const_target) {
 
+}
+
+void Context::RestoreForwardRegister() {
+    auto wrap = [this](std::array<Register, 0> tmp) -> void {
+        PopX(reg_forward_);
+    };
+    WrapContext<0>(wrap);
 }
 
 void Context::SaveContextFull(bool protect_lr) {
@@ -431,7 +442,8 @@ void Context::DispatherStub(CodeBlockRef block) {
     RestoreContextCallerSaved();
     __ Ret();
     auto stub_size = __ GetBuffer()->GetSizeInBytes();
-    auto buffer = block->AllocCodeBuffer(0, static_cast<u32>(stub_size));
+    auto buffer = block->AllocCodeBuffer(0);
+    block->FlushCodeBuffer(buffer, static_cast<u32>(stub_size));
     std::memcpy(reinterpret_cast<void *>(block->GetBufferStart(buffer)), __ GetBuffer()->GetStartAddress<void *>(), stub_size);
     __ Reset();
 }
@@ -449,7 +461,8 @@ void Context::CallSvcStub(CodeBlockRef block) {
     RestoreContextFull();
     __ Ret();
     auto stub_size = __ GetBuffer()->GetSizeInBytes();
-    auto buffer = block->AllocCodeBuffer(0, static_cast<u32>(stub_size));
+    auto buffer = block->AllocCodeBuffer(0);
+    block->FlushCodeBuffer(buffer, static_cast<u32>(stub_size));
     std::memcpy(reinterpret_cast<void *>(block->GetBufferStart(buffer)), __ GetBuffer()->GetStartAddress<void *>(), stub_size);
     __ Reset();
 }
@@ -467,7 +480,8 @@ void Context::SpecStub(CodeBlockRef block) {
     RestoreContextCallerSaved();
     __ Ret();
     auto stub_size = __ GetBuffer()->GetSizeInBytes();
-    auto buffer = block->AllocCodeBuffer(0, static_cast<u32>(stub_size));
+    auto buffer = block->AllocCodeBuffer(0);
+    block->FlushCodeBuffer(buffer, static_cast<u32>(stub_size));
     std::memcpy(reinterpret_cast<void *>(block->GetBufferStart(buffer)), __ GetBuffer()->GetStartAddress<void *>(), stub_size);
     __ Reset();
 }
@@ -516,6 +530,10 @@ void ContextNoMemTrace::LoadContext() {
 
 void ContextNoMemTrace::ClearContext() {
     __ Ldr(reg_ctx_, MemOperand(reg_ctx_, OFFSET_CTX_A64_CPU_REG + reg_ctx_.GetCode() * 8));
+}
+
+u32 ContextNoMemTrace::CodeSizeOfForwardRestore() {
+    return 8 * 8;
 }
 
 
@@ -630,7 +648,8 @@ void ContextWithMemTrace::PageLookupStub(CodeBlockRef block) {
     };
     WrapContext<4>(wrap);
     auto stub_size = __ GetBuffer()->GetSizeInBytes();
-    auto buffer = block->AllocCodeBuffer(0, static_cast<u32>(stub_size));
+    auto buffer = block->AllocCodeBuffer(0);
+    block->FlushCodeBuffer(buffer, static_cast<u32>(stub_size));
     std::memcpy(reinterpret_cast<void *>(block->GetBufferStart(buffer)), __ GetBuffer()->GetStartAddress<void *>(), stub_size);
     __ Reset();
 }
@@ -655,4 +674,8 @@ void ContextWithMemTrace::CheckWriteSpec(Register pte_reg, Register offset_reg) 
     __ Bl(label_hook);
     PopX(lr);
     __ Bind(label_skip);
+}
+
+u32 ContextWithMemTrace::CodeSizeOfForwardRestore() {
+    return 8;
 }

@@ -11,18 +11,22 @@ bool BaseBlock::SaveToDisk(std::string path) {
     return false;
 }
 
-Buffer &BaseBlock::AllocCodeBuffer(VAddr source, u32 size) {
-    assert(size <= UINT16_MAX << 2);
+Buffer &BaseBlock::AllocCodeBuffer(VAddr source) {
     LockGuard lck(lock_);
     Buffer &buffer = buffers_[current_buffer_id_];
     buffer.id_ = current_buffer_id_;
-    buffer.size_ = static_cast<u16>(size >> 2);
-    buffer.source_= source;
+    buffer.source_ = source;
     buffer.version_ = 1;
-    buffer.offset_ = current_offset_ += buffer.size_;
     buffers_map_[source] = current_buffer_id_;
-    current_buffer_id_ ++;
+    current_buffer_id_++;
     return buffer;
+}
+
+void BaseBlock::FlushCodeBuffer(Buffer &buffer, u32 size) {
+    assert(size <= (UINT16_MAX << 2));
+    buffer.size_ = static_cast<u16>(size >> 2);
+    LockGuard lck(lock_);
+    buffer.offset_ = current_offset_ += buffer.size_;
 }
 
 VAddr BaseBlock::GetBufferStart(Buffer &buffer) {
@@ -50,6 +54,14 @@ void BaseBlock::Align(u32 size) {
     current_offset_ = RoundUp(current_offset_, size);
 }
 
+u16 BaseBlock::GetCurrentId() const {
+    return current_buffer_id_;
+}
+
+std::mutex &BaseBlock::Lock() {
+    return lock_;
+}
+
 static VAddr MapCodeMemory(u32 size) {
     return reinterpret_cast<VAddr>(mmap(0, size, PROT_READ | PROT_WRITE | PROT_EXEC,
                                         MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED,
@@ -60,11 +72,12 @@ static void UnMapCodeMemory(VAddr start, u32 size) {
     munmap(reinterpret_cast<void *>(start), size);
 }
 
-A64::CodeBlock::CodeBlock(u32 block_size) : BaseBlock(MapCodeMemory(block_size), block_size) {
+A64::CodeBlock::CodeBlock(u32 forward_reg_rec_size, u32 block_size) : BaseBlock(
+        MapCodeMemory(block_size), block_size), forward_reg_rec_size_(forward_reg_rec_size) {
     // init dispatcher table
     dispatcher_count_ = std::min<u32>(block_size >> 8, UINT16_MAX);
     dispatcher_table_ = reinterpret_cast<DispatcherTable *>(start_);
-    current_offset_ = sizeof(DispatcherTable) >> 2;
+    current_offset_ = (sizeof(Dispatcher) * dispatcher_count_) >> 2;
 }
 
 A64::CodeBlock::~CodeBlock() {
@@ -73,17 +86,28 @@ A64::CodeBlock::~CodeBlock() {
 
 void A64::CodeBlock::GenDispatcher(Buffer &buffer) {
     assert(buffer.id_ < dispatcher_count_);
-    auto delta = GetBufferStart(buffer) - reinterpret_cast<VAddr>(&dispatcher_table_->dispatchers_[buffer.id_].instr_direct_branch_);
+    auto delta = GetBufferStart(buffer) -
+                 reinterpret_cast<VAddr>(&dispatcher_table_->dispatchers_[buffer.id_].go_without_pop_forward_);
     // B offset
-    dispatcher_table_->dispatchers_[buffer.id_].instr_direct_branch_ = 0x14000000 | (0x03ffffff & (static_cast<u32>(delta) >> 2));
+    dispatcher_table_->dispatchers_[buffer.id_].go_without_pop_forward_ =
+            0x14000000 | (0x03ffffff & (static_cast<u32>(delta) >> 2));
+    dispatcher_table_->dispatchers_[buffer.id_].go_with_pop_forward_ =
+            0x14000000 | (0x03ffffff & (static_cast<u32>(delta + forward_reg_rec_size_) >> 2));
 }
 
-VAddr A64::CodeBlock::GetDispatcherAddr(Buffer &buffer) {
-    return reinterpret_cast<VAddr>(&dispatcher_table_->dispatchers_[buffer.id_].instr_direct_branch_);
+VAddr A64::CodeBlock::GetDispatcherAddr(Buffer &buffer, bool with_pop_forward) {
+    if (with_pop_forward) {
+        return reinterpret_cast<VAddr>(&dispatcher_table_->dispatchers_[buffer.id_].go_with_pop_forward_);
+    } else {
+        return reinterpret_cast<VAddr>(&dispatcher_table_->dispatchers_[buffer.id_].go_without_pop_forward_);
+    }
 }
 
-Buffer &A64::CodeBlock::AllocCodeBuffer(VAddr source, u32 size) {
-    auto buffer = BaseBlock::AllocCodeBuffer(source, size);
+VAddr A64::CodeBlock::GetDispatcherOffset(Buffer &buffer, bool with_pop_forward) {
+    return start_ - GetDispatcherAddr(buffer, with_pop_forward);
+}
+
+void A64::CodeBlock::FlushCodeBuffer(Buffer &buffer, u32 size) {
+    BaseBlock::FlushCodeBuffer(buffer, size);
     GenDispatcher(buffer);
-    return buffer;
 }

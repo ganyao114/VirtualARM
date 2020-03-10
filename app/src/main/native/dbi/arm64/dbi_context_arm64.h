@@ -61,10 +61,11 @@ namespace DBI::A64 {
     public:
 
         Context(const Register &reg_ctx, const Register &reg_forward);
-
         virtual ~Context();
 
         static SharedPtr<Context> &Current();
+
+        MacroAssembler &Assembler();
 
         void SetCodeCachePosition(VAddr addr);
         void FlushCodeCache(CodeBlockRef block, bool bind_stub = true);
@@ -188,6 +189,8 @@ namespace DBI::A64 {
         // brunch
         void FindForwardTarget(u8 reg_target);
         void FindForwardTarget(VAddr const_target);
+        void RestoreForwardRegister();
+        virtual u32 CodeSizeOfForwardRestore() = 0;
 
         // system
         void CallSvc(u32 svc_num);
@@ -219,6 +222,8 @@ namespace DBI::A64 {
 
         void ClearContext() override;
 
+        u32 CodeSizeOfForwardRestore() override;
+
     protected:
 
         void PreDispatch();
@@ -248,6 +253,8 @@ namespace DBI::A64 {
         void CheckReadSpec(Register pte_reg, Register offset_reg);
 
         void CheckWriteSpec(Register pte_reg, Register offset_reg);
+
+        u32 CodeSizeOfForwardRestore() override;
 
     protected:
         u8 address_bits_unused_;

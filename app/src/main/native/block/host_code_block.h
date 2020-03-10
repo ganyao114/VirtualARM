@@ -43,9 +43,14 @@ namespace Code {
 
         Buffer &GetBuffer(u16 id);
 
-        virtual Buffer &AllocCodeBuffer(VAddr source, u32 size);
+        virtual Buffer &AllocCodeBuffer(VAddr source);
+        virtual void FlushCodeBuffer(Buffer &buffer, u32 size);
         void Align(u32 size);
         virtual bool SaveToDisk(std::string path);
+
+        u16 GetCurrentId() const;
+        std::mutex &Lock();
+
     protected:
         VAddr start_;
         VAddr size_;
@@ -67,7 +72,8 @@ namespace Code {
 
         struct Dispatcher {
             // B label
-            u32 instr_direct_branch_;
+            u32 go_with_pop_forward_;
+            u32 go_without_pop_forward_;
         };
 
         struct DispatcherTable {
@@ -78,16 +84,18 @@ namespace Code {
 
         class CodeBlock : public BaseBlock {
         public:
-            CodeBlock(u32 block_size = BLOCK_SIZE_A64);
+            CodeBlock(u32 forward_reg_rec_size, u32 block_size = BLOCK_SIZE_A64);
             virtual ~CodeBlock();
 
-            Buffer &AllocCodeBuffer(VAddr source, u32 size) override;
+            void FlushCodeBuffer(Buffer &buffer, u32 size) override;
 
             void GenDispatcher(Buffer &buffer);
-            VAddr GetDispatcherAddr(Buffer &buffer);
+            VAddr GetDispatcherAddr(Buffer &buffer, bool with_pop_forward = true);
+            VAddr GetDispatcherOffset(Buffer &buffer, bool with_pop_forward = true);
 
         protected:
             u32 dispatcher_count_;
+            u32 forward_reg_rec_size_;
             DispatcherTable *dispatcher_table_;
         };
 
