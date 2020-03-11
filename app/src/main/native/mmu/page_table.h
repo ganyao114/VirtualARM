@@ -10,7 +10,7 @@
 
 namespace MMU {
 
-    template <typename AddrType, u8 page_bits>
+    template<typename AddrType, u8 page_bits>
     class PageTableWithHostPageAlign {
     public:
 
@@ -35,11 +35,12 @@ namespace MMU {
         std::vector<PageAddr> pages_;
     };
 
-    template <typename AddrType, typename AttrType>
+    template<typename AddrType, typename AttrType>
     class FlatPageTable : public BaseObject {
     public:
 
-        FlatPageTable(u8 page_bits, u8 addr_width) : page_bits_(page_bits), addr_width_(addr_width) {
+        FlatPageTable(u8 page_bits, u8 addr_width) : page_bits_(page_bits),
+                                                     addr_width_(addr_width) {
             const std::size_t num_page_table_entries = 1ULL
                     << (addr_width_ - page_bits);
             pages_.resize(num_page_table_entries);
@@ -63,14 +64,17 @@ namespace MMU {
         std::vector<AttrType> attrs_;
     };
 
-    template <typename AddrType, typename PTE>
+    template<typename AddrType, typename PTE>
     class MultiLevelPageTable : public BaseObject {
     public:
 
-        using Table = VAddr*;
-        using FinalTable = PTE*;
+        using Table = VAddr *;
+        using FinalTable = PTE *;
 
-        MultiLevelPageTable(u8 page_bits, u8 addr_width, bool tlb_per_thread = false) : page_bits_(page_bits), addr_width_(addr_width) {
+        MultiLevelPageTable(u8 page_bits, u8 addr_width, bool tlb_per_thread = false) : page_bits_(page_bits)
+                                                                    , addr_width_(addr_width)
+                                                                    , page_size_((AddrType) 1 << page_bits_)
+                                                                    , page_mask_(page_size_ - 1) {
             pte_bits_ = addr_width_ - page_bits_;
             if (pte_bits_ >= 48 && pte_bits_ % 3 == 0) {
                 // 3级页表
@@ -109,11 +113,13 @@ namespace MMU {
 
         void MapPage(AddrType vaddr, PTE &pte) {
             assert(vaddr % (1 << page_bits_) == 0);
-            AddrType all_page_bits = BitRange<AddrType>(vaddr, page_bits_, sizeof(AddrType) - addr_width_ - 1);
+            AddrType all_page_bits = BitRange<AddrType>(vaddr, page_bits_,
+                                                        sizeof(AddrType) - addr_width_ - 1);
             AddrType index;
             Table table = reinterpret_cast<Table>(pages_.data());
             for (int i = 0; i < level_; ++i) {
-                index = BitRange<AddrType>(all_page_bits, pte_bits_ * (level_ - i - 1), pte_bits_ * (level_ - i) - 1);
+                index = BitRange<AddrType>(all_page_bits, pte_bits_ * (level_ - i - 1),
+                                           pte_bits_ * (level_ - i) - 1);
                 if (i < level_ - 2) {
                     auto tmp = reinterpret_cast<Table>(table[index]);
                     if (tmp == nullptr) {
@@ -140,11 +146,13 @@ namespace MMU {
 
         void UnMapPage(AddrType vaddr) {
             assert(vaddr % (1 << page_bits_) == 0);
-            AddrType all_page_bits = BitRange<AddrType>(vaddr, page_bits_, sizeof(AddrType) - addr_width_ - 1);
+            AddrType all_page_bits = BitRange<AddrType>(vaddr, page_bits_,
+                                                        sizeof(AddrType) - addr_width_ - 1);
             AddrType index;
             Table table = reinterpret_cast<Table>(pages_.data());
             for (int i = 0; i < level_; ++i) {
-                index = BitRange<AddrType>(all_page_bits, pte_bits_ * (level_ - i - 1), pte_bits_ * (level_ - i) - 1);
+                index = BitRange<AddrType>(all_page_bits, pte_bits_ * (level_ - i - 1),
+                                           pte_bits_ * (level_ - i) - 1);
                 if (i < level_ - 2) {
                     auto tmp = reinterpret_cast<Table>(table[index]);
                     if (tmp == nullptr) {
@@ -175,11 +183,13 @@ namespace MMU {
                     return pte;
                 }
             }
-            AddrType all_page_bits = BitRange<AddrType>(vaddr, page_bits_, sizeof(AddrType) - addr_width_ - 1);
+            AddrType all_page_bits = BitRange<AddrType>(vaddr, page_bits_,
+                                                        sizeof(AddrType) - addr_width_ - 1);
             AddrType index;
             Table table = reinterpret_cast<Table>(pages_.data());
             for (int i = 0; i < level_; ++i) {
-                index = BitRange<AddrType>(all_page_bits, pte_bits_ * (level_ - i - 1), pte_bits_ * (level_ - i) - 1);
+                index = BitRange<AddrType>(all_page_bits, pte_bits_ * (level_ - i - 1),
+                                           pte_bits_ * (level_ - i) - 1);
                 if (i < level_ - 2) {
                     auto tmp = reinterpret_cast<Table>(table[index]);
                     if (tmp == nullptr) {
@@ -198,6 +208,71 @@ namespace MMU {
             }
         }
 
+        void ReadMemory(const AddrType src_addr, void *dest_buffer, const std::size_t size) {
+            std::size_t remaining_size = size;
+            std::size_t page_index = src_addr >> page_bits_;
+            std::size_t page_offset = src_addr & page_mask_;
+
+            while (remaining_size > 0) {
+                const std::size_t copy_amount =
+                        std::min(static_cast<std::size_t>(page_size_) - page_offset, remaining_size);
+                const VAddr current_vaddr = static_cast<VAddr>((page_index << page_bits_) + page_offset);
+
+                auto pte = GetPage(page_index >> page_bits_);
+
+                if (pte == PTE{}) {
+                    std::memset(dest_buffer, 0, copy_amount);
+                } else {
+                    VAddr src_ptr = GetPageStart(pte) + page_offset;
+                    std::memcpy(dest_buffer, reinterpret_cast<const void *>(src_ptr),
+                                copy_amount);
+                }
+
+                page_index++;
+                page_offset = 0;
+                dest_buffer = static_cast<u8*>(dest_buffer) + copy_amount;
+                remaining_size -= copy_amount;
+            }
+        }
+
+        void WriteMemory(const VAddr dest_addr, const void* src_buffer, const std::size_t size) {
+            std::size_t remaining_size = size;
+            std::size_t page_index = dest_addr >> page_bits_;
+            std::size_t page_offset = dest_addr & page_mask_;
+
+            while (remaining_size > 0) {
+                const std::size_t copy_amount =
+                        std::min(static_cast<std::size_t>(page_size_) - page_offset, remaining_size);
+                const VAddr current_vaddr = static_cast<VAddr>((page_index << page_bits_) + page_offset);
+
+                auto pte = GetPage(page_index >> page_bits_);
+
+                if (pte == PTE{}) {
+                    abort();
+                } else {
+                    VAddr dest_ptr = GetPageStart(pte) + page_offset;
+                    std::memcpy(reinterpret_cast<void *>(dest_ptr), src_buffer, copy_amount);
+                }
+
+                page_index++;
+                page_offset = 0;
+                src_buffer = static_cast<const u8*>(src_buffer) + copy_amount;
+                remaining_size -= copy_amount;
+            }
+        }
+
+        template <typename T>
+        T Read(const AddrType vaddr) {
+            T t;
+            ReadMemory(vaddr, &t, sizeof(T));
+            return t;
+        }
+
+        template <typename T>
+        void Write(const AddrType vaddr, const T data) {
+            WriteMemory(vaddr, &data, sizeof(T));
+        }
+
         VAddr TopPageTable() {
             return reinterpret_cast<VAddr>(pages_.data());
         }
@@ -206,13 +281,19 @@ namespace MMU {
             return tlb_;
         }
 
+        virtual VAddr GetPageStart(PTE &pte) {
+            abort();
+        };
+
     protected:
         const u8 addr_width_;
         const u8 page_bits_;
+        const AddrType page_size_;
+        const AddrType page_mask_;
         u8 pte_bits_;
         std::size_t pte_size_;
         u8 level_;
-        std::vector<Table*> pages_;
+        std::vector<Table *> pages_;
         SharedPtr<TLB<AddrType, PTE>> tlb_;
     };
 

@@ -40,7 +40,11 @@ namespace DBI::A64 {
         }
     };
 
-    using PageTable = MultiLevelPageTable<VAddr, PTE>;
+    class PageTable : public MultiLevelPageTable<VAddr, PTE> {
+    public:
+        PageTable(u8 pageBits, u8 addrWidth, bool tlbPerThread);
+        VAddr GetPageStart(PTE &pte) override;
+    };
 
 
 
