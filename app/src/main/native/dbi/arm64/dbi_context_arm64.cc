@@ -578,8 +578,7 @@ u32 ContextNoMemTrace::CodeSizeOfForwardRestore() {
 
 
 ContextWithMemTrace::ContextWithMemTrace(SharedPtr<A64MMU> mmu) : Context(TMP1, TMP0),
-                                                                  page_table_(
-                                                                          mmu) {
+                                                                  mmu_(mmu) {
     // Need keep CTX_REG, so rewrite all instructions used CTX_REG
     page_bits_ = mmu->GetPageBits();
     address_bits_unused_ = mmu->GetUnusedBits();
@@ -658,26 +657,26 @@ void ContextWithMemTrace::PageLookupStub(CodeBlockRef block) {
     class Label page_not_found;
     // lookup page table
     auto wrap = [this, &page_not_found](std::array<Register, 4> tmp) -> void {
-        auto level = page_table_->GetLevel();
+        auto level = mmu_->GetLevel();
         // load page index
         __ Ldr(tmp[0], MemOperand(reg_ctx_, OFFSET_CTX_A64_QUERY_PAGE));
         // clear unused addr bits
-        __ Bfc(tmp[0], page_table_->GetPageBits() * level, address_bits_unused_);
+        __ Bfc(tmp[0], mmu_->GetPageBits() * level, address_bits_unused_);
         // top page table
         __ Ldr(tmp[1], MemOperand(reg_ctx_, OFFSET_CTX_A64_PAGE_TABLE));
         while (level > 1) {
             __ Mov(tmp[2], Operand(tmp[0], LSR,
-                                   static_cast<unsigned int>(page_table_->GetPageBits() *
+                                   static_cast<unsigned int>(mmu_->GetPageBits() *
                                                              (level - 1))));
-            if (level != page_table_->GetLevel()) {
+            if (level != mmu_->GetLevel()) {
                 // clear upper level bits
-                __ Bfc(tmp[2], page_table_->GetPteBits() * (level - 1), page_table_->GetPteBits() * (level - 1));
+                __ Bfc(tmp[2], mmu_->GetPteBits() * (level - 1), mmu_->GetPteBits() * (level - 1));
             }
             __ Ldr(tmp[1], MemOperand(tmp[1], tmp[2], LSL, 3));
             __ Cbz(tmp[1], &page_not_found);
             level--;
         }
-        __ Bfc(tmp[0], page_table_->GetPteBits(), page_table_->GetPteBits() * (level - 1));
+        __ Bfc(tmp[0], mmu_->GetPteBits(), mmu_->GetPteBits() * (level - 1));
         // Load PTE, arm64 pte size = 8
         __ Ldr(tmp[1], MemOperand(tmp[1], tmp[0], LSL, 3));
         __ Cbz(tmp[1], &page_not_found);

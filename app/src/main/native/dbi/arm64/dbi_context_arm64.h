@@ -265,7 +265,7 @@ namespace DBI::A64 {
         u8 tlb_bits_;
         bool hook_read_spec_;
         bool hook_write_spec_;
-        SharedPtr<A64MMU> page_table_;
+        SharedPtr<A64MMU> mmu_;
     };
 
 }
