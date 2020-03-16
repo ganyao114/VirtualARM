@@ -8,7 +8,7 @@
 #include <base/marcos.h>
 #include <vector>
 
-namespace MMU {
+namespace Memory {
 
     template <typename AddrType, typename PTE>
     struct TLBEntry {

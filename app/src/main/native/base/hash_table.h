@@ -7,7 +7,7 @@
 #include "marcos.h"
 
 #define CODE_CACHE_HASH_BITS 18
-#define CODE_CACHE_HASH_SIZE 1 << (CODE_CACHE_HASH_BITS + 1) - 1//14071
+#define CODE_CACHE_HASH_SIZE (1 << (CODE_CACHE_HASH_BITS + 1) - 1)//14071
 #define CODE_CACHE_HASH_OVERP 10
 
 /* Warning, size MUST be (a power of 2) */

@@ -577,15 +577,16 @@ u32 ContextNoMemTrace::CodeSizeOfForwardRestore() {
 }
 
 
-ContextWithMemTrace::ContextWithMemTrace(SharedPtr<PageTable> page_table) : Context(TMP1, TMP0),
-                                                                            page_table_(
-                                                                                    page_table) {
+ContextWithMemTrace::ContextWithMemTrace(SharedPtr<A64MMU> mmu) : Context(TMP1, TMP0),
+                                                                  page_table_(
+                                                                          mmu) {
     // Need keep CTX_REG, so rewrite all instructions used CTX_REG
-    page_bits_ = page_table->GetPageBits();
-    address_bits_unused_ = page_table->GetUnusedBits();
-    tlb_bits_ = page_table->Tbl()->TLBBits();
-    context_.tlb = page_table->Tbl()->TLBTablePtr();
-    context_.page_table = page_table->TopPageTable();
+    page_bits_ = mmu->GetPageBits();
+    address_bits_unused_ = mmu->GetUnusedBits();
+    tlb_bits_ = mmu->Tbl()->TLBBits();
+    context_.tlb = mmu->Tbl()->TLBTablePtr();
+    context_.page_table = mmu->TopPageTable();
+    u32 res = mmu->Read<u32>(0);
 }
 
 void ContextWithMemTrace::LookupFlatPageTable(u8 reg_addr) {

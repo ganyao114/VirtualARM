@@ -4,7 +4,7 @@
 
 #include "tlb.h"
 
-using namespace MMU;
+using namespace Memory;
 
 
 

@@ -8,7 +8,7 @@
 #include <vector>
 #include "tlb.h"
 
-namespace MMU {
+namespace Memory {
 
     template<typename AddrType, u8 page_bits>
     class PageTableWithHostPageAlign {
@@ -65,13 +65,13 @@ namespace MMU {
     };
 
     template<typename AddrType, typename PTE>
-    class MultiLevelPageTable : public BaseObject {
+    class MMU : public BaseObject {
     public:
 
         using Table = VAddr *;
         using FinalTable = PTE *;
 
-        MultiLevelPageTable(u8 page_bits, u8 addr_width, bool tlb_per_thread = false) : page_bits_(page_bits)
+        MMU(u8 page_bits, u8 addr_width, bool tlb_per_thread = false) : page_bits_(page_bits)
                                                                     , addr_width_(addr_width)
                                                                     , page_size_((AddrType) 1 << page_bits_)
                                                                     , page_mask_(page_size_ - 1) {
@@ -206,26 +206,29 @@ namespace MMU {
                     return final_table[pte_index];
                 }
             }
+            return {};
         }
 
         void ReadMemory(const AddrType src_addr, void *dest_buffer, const std::size_t size) {
-            std::size_t remaining_size = size;
-            std::size_t page_index = src_addr >> page_bits_;
-            std::size_t page_offset = src_addr & page_mask_;
+            AddrType remaining_size = size;
+            AddrType page_index = src_addr >> page_bits_;
+            AddrType page_offset = src_addr & page_mask_;
 
             while (remaining_size > 0) {
                 const std::size_t copy_amount =
                         std::min(static_cast<std::size_t>(page_size_) - page_offset, remaining_size);
-                const VAddr current_vaddr = static_cast<VAddr>((page_index << page_bits_) + page_offset);
+                const AddrType current_vaddr = (page_index << page_bits_) + page_offset;
 
                 auto pte = GetPage(page_index >> page_bits_);
 
-                if (pte == PTE{}) {
+                if (PageReadable(pte)) {
                     std::memset(dest_buffer, 0, copy_amount);
+                    InvalidRead(current_vaddr, copy_amount);
                 } else {
                     VAddr src_ptr = GetPageStart(pte) + page_offset;
                     std::memcpy(dest_buffer, reinterpret_cast<const void *>(src_ptr),
                                 copy_amount);
+                    HostReadCallback(src_ptr, copy_amount);
                 }
 
                 page_index++;
@@ -235,23 +238,24 @@ namespace MMU {
             }
         }
 
-        void WriteMemory(const VAddr dest_addr, const void* src_buffer, const std::size_t size) {
-            std::size_t remaining_size = size;
-            std::size_t page_index = dest_addr >> page_bits_;
-            std::size_t page_offset = dest_addr & page_mask_;
+        void WriteMemory(const AddrType dest_addr, const void* src_buffer, const std::size_t size) {
+            AddrType remaining_size = size;
+            AddrType page_index = dest_addr >> page_bits_;
+            AddrType page_offset = dest_addr & page_mask_;
 
             while (remaining_size > 0) {
                 const std::size_t copy_amount =
                         std::min(static_cast<std::size_t>(page_size_) - page_offset, remaining_size);
-                const VAddr current_vaddr = static_cast<VAddr>((page_index << page_bits_) + page_offset);
+                const AddrType current_vaddr = (page_index << page_bits_) + page_offset;
 
-                auto pte = GetPage(page_index >> page_bits_);
+                auto pte = GetPage(current_vaddr);
 
-                if (pte == PTE{}) {
-                    abort();
+                if (!PageWritable(pte)) {
+                    InvalidWrite(current_vaddr, copy_amount);
                 } else {
                     VAddr dest_ptr = GetPageStart(pte) + page_offset;
                     std::memcpy(reinterpret_cast<void *>(dest_ptr), src_buffer, copy_amount);
+                    HostWriteCallback(dest_ptr, copy_amount);
                 }
 
                 page_index++;
@@ -284,6 +288,20 @@ namespace MMU {
         virtual VAddr GetPageStart(PTE &pte) {
             abort();
         };
+
+        virtual bool PageReadable(PTE &pte) {
+            return true;
+        }
+
+        virtual bool PageWritable(PTE &pte) {
+            return true;
+        }
+
+        virtual void HostReadCallback(VAddr host_addr, std::size_t size) {};
+        virtual void HostWriteCallback(VAddr host_addr, std::size_t size) {};
+
+        virtual void InvalidRead(AddrType vaddr, std::size_t size) {};
+        virtual void InvalidWrite(AddrType vaddr, std::size_t size) {};
 
     protected:
         const u8 addr_width_;

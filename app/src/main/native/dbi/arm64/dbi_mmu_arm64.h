@@ -5,9 +5,9 @@
 #pragma once
 
 #include <base/marcos.h>
-#include "mmu/page_table.h"
+#include "memory/mmu.h"
 
-using namespace MMU;
+using namespace Memory;
 
 namespace DBI::A64 {
 
@@ -40,10 +40,22 @@ namespace DBI::A64 {
         }
     };
 
-    class PageTable : public MultiLevelPageTable<VAddr, PTE> {
+    class A64MMU : public MMU<VAddr, PTE> {
     public:
-        PageTable(u8 pageBits, u8 addrWidth, bool tlbPerThread);
+        A64MMU(u8 pageBits, u8 addrWidth, bool tlbPerThread);
         VAddr GetPageStart(PTE &pte) override;
+
+        bool PageReadable(PTE &pte) override;
+
+        bool PageWritable(PTE &pte) override;
+
+        void HostReadCallback(VAddr host_addr, std::size_t size) override;
+
+        void HostWriteCallback(VAddr host_addr, std::size_t size) override;
+
+        void InvalidRead(VAddr vaddr, std::size_t size) override;
+
+        void InvalidWrite(VAddr vaddr, std::size_t size) override;
     };
 
 

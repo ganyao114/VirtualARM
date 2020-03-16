@@ -28,7 +28,7 @@ namespace DBI::A64 {
 #define TMP0 x17
 #define TMP1 x16
 #define HOST_TLS ({ void** __val; __asm__("mrs %0, tpidr_el0" : "=r"(__val)); __val; })
-#define HOST_STACK_SIZE 1U << 20
+#define HOST_STACK_SIZE (1U << 20)
 
     class LabelHolder : public BaseObject {
     public:
@@ -243,7 +243,7 @@ namespace DBI::A64 {
 
     class ContextWithMemTrace : public Context {
     public:
-        ContextWithMemTrace(SharedPtr<PageTable> page_table);
+        ContextWithMemTrace(SharedPtr<A64MMU> mmu);
 
         void LookupTLB(u8 reg_addr);
 
@@ -265,7 +265,7 @@ namespace DBI::A64 {
         u8 tlb_bits_;
         bool hook_read_spec_;
         bool hook_write_spec_;
-        SharedPtr<PageTable> page_table_;
+        SharedPtr<A64MMU> page_table_;
     };
 
 }
