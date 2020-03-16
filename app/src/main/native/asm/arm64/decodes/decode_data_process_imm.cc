@@ -4,7 +4,7 @@
 
 #include "asm/arm64/instruction_decode.h"
 
-using namespace Instruction::A64;
+using namespace Instructions::A64;
 
 InstrA64Ref DecodePCRel(AArch64Inst& inst) {
     SharedPtr<InstrA64PCRelAddr> instr(new InstrA64PCRelAddr());

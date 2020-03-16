@@ -4,17 +4,7 @@
 
 #include "decode_visitors.h"
 
-using namespace Instruction::A64;
-
-template<unsigned int flags>
-void DecodeVisitor::BrunchImm(s32 offset, Condition condition) {
-
-}
-
-template<unsigned int flags>
-void DecodeVisitor::BrunchReg(u8 reg_target, Condition condition) {
-
-}
+using namespace Instructions::A64;
 
 static constexpr s32 CondOffset(u32 imm) {
     return SignExtend<s32, 28>(imm << 2);
@@ -25,7 +15,7 @@ static constexpr s32 UnCondOffset(u32 imm) {
 }
 
 void DecodeVisitor::B_cond(u32 cond, u32 bch_cond_offset) {
-    BrunchImm(CondOffset(bch_cond_offset), Condition(cond));
+    BrunchImm(CondOffset(bch_cond_offset), Cond(cond));
 }
 
 void DecodeVisitor::B(u32 bch_ucond_offset) {
@@ -61,5 +51,5 @@ void DecodeVisitor::TBNZ(u32 Rt, u32 b5, u32 b40, u32 tbz_offset) {
 }
 
 void DecodeVisitor::RET() {
-    BrunchImm<Ret>();
+    BrunchReg(static_cast<u8>(XReg::LR));
 }

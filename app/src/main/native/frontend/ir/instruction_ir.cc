@@ -4,7 +4,7 @@
 
 #include "instruction_ir.h"
 
-using namespace Instruction::IR;
+using namespace Instructions::IR;
 
 InstrIR::InstrIR(OpcodeIR opcode, size_t useCount, const std::array<Argument, max_arg_count> &args) {
 

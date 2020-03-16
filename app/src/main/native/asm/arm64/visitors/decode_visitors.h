@@ -6,7 +6,7 @@
 
 #include "asm/arm64/instruction_table.h"
 
-namespace Instruction::A64 {
+namespace Instructions::A64 {
 
     struct DecodeVisitor : public BaseVisitor {
         using instruction_return_type = void;
@@ -16,14 +16,7 @@ namespace Instruction::A64 {
             TestBit = 1 << 1,
             Comp    = 1 << 2,
             Negate  = 1 << 3,
-            Ret     = 1 << 4
         };
-
-        template <unsigned flags = 0>
-        void BrunchImm(s32 offset = 0, Condition condition = NO_COND);
-
-        template <unsigned flags = 0>
-        void BrunchReg(u8 reg_target, Condition condition = NO_COND);
 
 #define Type(...)
 #define FIELD1(f1) u32 f1
@@ -33,7 +26,7 @@ namespace Instruction::A64 {
 #define INST(code, name, fields, ...) \
     void code(fields);
 
-#include "asm/arm64/instructions_table.inl"
+#include "asm/arm64/instructions_table_all.inl"
 
 #undef FIELD1
 #undef FIELD2
@@ -41,6 +34,12 @@ namespace Instruction::A64 {
 #undef FIELD4
 #undef INST
 #undef Type
+
+        template <unsigned flags = 0>
+        void BrunchImm(s32 offset = 0, Cond condition = NO_COND) {}
+
+        template <unsigned flags = 0>
+        void BrunchReg(u8 reg_target, Cond condition = NO_COND) {}
     };
 
 }

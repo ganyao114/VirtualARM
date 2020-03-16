@@ -32,18 +32,18 @@ INST(DCPS3, "DCPS3", FIELD1(imm16),                         "110101001010xxxxxxx
 
 //System
 Type(System)
-INST(MRS, "MRS",   ,                             "110101010011xxxxxxxxxxxxxxxxxxxx",)
-INST(MSR_imm, "MSR",   ,                         "1101010100000xxx0100xxxxxxx11111",)
-INST(MSR_reg, "MSR",   ,                         "110101010001xxxxxxxxxxxxxxxxxxxx",)
-INST(NOP, "NOP",   ,                                 "11010101000000110010000000011111",)
-INST(YIELD, "YIELD",   ,                             "11010101000000110010000000111111",)
+INST(MRS, "MRS", FIELD2(system_register, Rd),               "110101010011xxxxxxxxxxxxxxxxxxxx",)
+INST(MSR_imm, "MSR",  ,                                     "1101010100000xxx0100xxxxxxx11111",)
+INST(MSR_reg, "MSR", FIELD2(system_register, Rd),           "110101010001xxxxxxxxxxxxxxxxxxxx",)
+INST(NOP, "NOP",  ,                                         "11010101000000110010000000011111",)
+INST(YIELD, "YIELD",   ,                                    "11010101000000110010000000111111",)
 
 
 // Data Proccessing Immediate
 // PC-rel. addressing
 Type(PCRelAdr)
-INST(ADR, "ADR", FIELD3(Rd, immhi, immlo),                      "0xx10000xxxxxxxxxxxxxxxxxxxxxxxx",)
-INST(ADRP, "ADRP", FIELD3(Rd, immhi, immlo),                   "1xx10000xxxxxxxxxxxxxxxxxxxxxxxx",)
+INST(ADR, "ADR", FIELD3(Rd, immhi, immlo),                  "0xx10000xxxxxxxxxxxxxxxxxxxxxxxx",)
+INST(ADRP, "ADRP", FIELD3(Rd, immhi, immlo),                "1xx10000xxxxxxxxxxxxxxxxxxxxxxxx",)
 // Add/subtract (immediate)
 Type(AddSubImmediate)
 INST(ADD_imm, "ADD", ,   "x00100010xxxxxxxxxxxxxxxxxxxxxxx",)

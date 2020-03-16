@@ -12,8 +12,8 @@
 #include "block/host_code_block.h"
 
 using namespace vixl::aarch64;
-using namespace Code;
-using namespace Code::A64;
+using namespace CodeCache;
+using namespace CodeCache::A64;
 
 
 // TODO Code Invalid 粒度在于一个个 Block，那当某些线程仍跑在旧 Block 中时，新 Block 的改动被提交了，那么该线程仍会跑一段旧代码，syscall 后的代码较易复现
@@ -171,8 +171,11 @@ namespace DBI::A64 {
         void SetSuspendFlag(bool suspend);
 
         virtual void GetSp(u8 target) {};
-
         virtual void GetPc(u8 target) {};
+
+        // Set Register
+        void SetRegisterX(u8 reg_x, u64 value);
+        void SetRegisterW(u8 reg_w, u32 value);
 
         // sysreg
         void ReadTPIDR(u8 target);

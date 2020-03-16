@@ -4,8 +4,8 @@
 
 #include "instruction_table.h"
 
-using namespace Instruction;
-using namespace Instruction::A64;
+using namespace Instructions;
+using namespace Instructions::A64;
 
 bool InstrA64Info::Test(InstrA64 bits) const {
     return (bits & mask_pair_.first) == mask_pair_.second;
@@ -34,7 +34,7 @@ void InstructionTableA64::init() {
 #define Type(x) cur_type_ = InstrTypeA64::x;
 
     instr_table_[OpcodeA64::INVALID] = InstrA64Info(OpcodeA64::INVALID, {},"INVALID", {}, Unallocated);
-#include "instructions_table.inl"
+#include "instructions_table_all.inl"
 
     instr_table_[OpcodeA64::NUM_INSTRUCTIONS] = InstrA64Info(OpcodeA64::NUM_INSTRUCTIONS, {}, "NUM_INSTRUCTIONS", {}, Unallocated);
 

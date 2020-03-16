@@ -55,6 +55,7 @@ FIELD(is_simd, 26, 26)
 FIELD(ldrstr_opc, 22, 23)
 FIELD(addr_mode, 10, 11)
 FIELD(wback, 23, 23)
+FIELD(lit_offset, 5, 23)
 
 FIELD(_5_11, 5, 11)
 FIELD(_5_18, 5, 18)

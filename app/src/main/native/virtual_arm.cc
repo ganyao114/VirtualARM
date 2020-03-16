@@ -10,9 +10,9 @@
 #include "dbi/arm64/dbi_visitor_arm64.h"
 
 
-using namespace Instruction::A64;
+using namespace Instructions::A64;
 using namespace CPU::A64;
-using namespace Instruction::IR;
+using namespace Instructions::IR;
 
 
 extern "C"

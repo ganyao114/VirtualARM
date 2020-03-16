@@ -235,7 +235,7 @@ enum Condition {
 
   // Aliases.
   hs = cs,  // C set            Unsigned higher or same.
-  lo = cc   // C clear          Unsigned lower.
+  lo = cc,   // C clear          Unsigned lower.
 };
 
 inline Condition InvertCondition(Condition cond) {

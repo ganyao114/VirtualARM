@@ -8,9 +8,9 @@
 #include "instruction.h"
 #include "entry_point.h"
 
-using namespace Instruction;
+using namespace Instructions;
 
-namespace Code {
+namespace CodeCache {
 
     enum class EntryType {
         Interpreter,

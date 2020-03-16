@@ -4,7 +4,7 @@
 
 #include "ir_for_a64.h"
 
-using namespace Instruction::A64;
+using namespace Instructions::A64;
 
 // IR Assembler
 #define INST0(name, ret) ret& AssemblerIR::name() { \

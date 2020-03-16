@@ -10,7 +10,7 @@
 #include <boost/intrusive/slist_hook.hpp>
 #include <externals/ext-boost/boost/intrusive/slist.hpp>
 
-namespace Instruction::IR {
+namespace Instructions::IR {
 
     using namespace boost::intrusive;
 

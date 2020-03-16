@@ -4,7 +4,7 @@
 
 #include "asm/arm64/instruction_decode.h"
 
-using namespace Instruction::A64;
+using namespace Instructions::A64;
 
 #define STORE_REG_IMM(x) instruction = SharedPtr<InstrA64StoreRegImm>(new InstrA64StoreRegImm()); \
 instruction->SetOpcode(OpcodeA64::x);

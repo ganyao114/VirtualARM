@@ -6,7 +6,7 @@
 
 #include <includes/instruction.h>
 
-namespace Instruction::IR {
+namespace Instructions::IR {
 
     class InstrIR;
 

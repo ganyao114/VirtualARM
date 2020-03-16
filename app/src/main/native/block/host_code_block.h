@@ -7,7 +7,7 @@
 #include <base/marcos.h>
 #include <map>
 
-namespace Code {
+namespace CodeCache {
 
 #define MAX_BUFFER UINT16_MAX
 #define MAX_BLOCK_BIT 26

@@ -7,7 +7,7 @@
 #include "instruction_aarch64.h"
 #include "instruction_table.h"
 
-namespace Instruction::A64 {
+namespace Instructions::A64 {
 
     class Decoder {
     public:

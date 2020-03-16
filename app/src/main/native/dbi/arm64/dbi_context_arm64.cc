@@ -199,6 +199,14 @@ void Context::LoadFromContext(Register rt, VAddr offset) {
     }
 }
 
+void Context::SetRegisterX(u8 reg_x, u64 value) {
+    __ Mov(XRegister::GetXRegFromCode(reg_x), value);
+}
+
+void Context::SetRegisterW(u8 reg_w, u32 value) {
+    __ Mov(WRegister::GetWRegFromCode(reg_w), value);
+}
+
 void Context::ReadTPIDR(u8 target) {
     LoadFromContext(XRegister::GetXRegFromCode(target), OFFSET_CTX_A64_TPIDR);
 }

@@ -8,7 +8,7 @@
 #include <map>
 #include <vector>
 
-namespace Instruction::A64 {
+namespace Instructions::A64 {
 
     using MaskValuePair = std::pair<InstrA64, InstrA64>;
 
@@ -39,7 +39,7 @@ namespace Instruction::A64 {
         UN_DECODED,
         INVALID,
 
-#include "instructions_table.inl"
+#include "instructions_table_all.inl"
 
         NUM_INSTRUCTIONS,
     };
@@ -121,7 +121,7 @@ namespace Instruction::A64 {
 #define INST(x, name, fields, mask, ...) \
     callers_[static_cast<int>(OpcodeA64::x)] = Dispatcher<Visitor>::GetCaller(&Visitor::x, {fields});
 
-#include "instructions_table.inl"
+#include "instructions_table_all.inl"
 
 #undef INST
 #undef ARG_LIST

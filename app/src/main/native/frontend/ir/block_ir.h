@@ -8,11 +8,11 @@
 #include "includes/instruction.h"
 #include "instruction_ir.h"
 
-using namespace Instruction;
+using namespace Instructions;
 using namespace boost::intrusive;
-using namespace Instruction::IR;
+using namespace Instructions::IR;
 
-namespace Code::IR {
+namespace CodeCache::IR {
 
 
     struct Terminal {

@@ -8,9 +8,9 @@
 #include "includes/instruction.h"
 #include "instruction_aarch64.h"
 
-using namespace Instruction;
+using namespace Instructions;
 
-using Cond = A64::Condition;
+using Cond = A64::Cond;
 using Offset = A64::Offset;
 
 namespace Assembler::A64 {
@@ -26,7 +26,7 @@ namespace Assembler::A64 {
 #define ARG2(arg1, arg2) arg1 &a1, arg2 &a2
 #define Type(x)
 
-#include "instructions_table.inl";
+#include "instructions_table_all.inl";
 
 #undef INST
 #undef ARG1

@@ -7,7 +7,7 @@
 #include "base/marcos.h"
 #include "includes/cpu.h"
 
-namespace Instruction::A64 {
+namespace Instructions::A64 {
 
     enum Shift {
         NO_SHIFT = -1,
@@ -23,7 +23,7 @@ namespace Instruction::A64 {
         OffsetMode = 0, PostIndex = 1, PreIndex = 3, NonAddrMode = 2
     };
 
-    enum Condition {
+    enum Cond {
         EQ, NE, CS, CC, MI, PL, VS, VC, HI, LS, GE, LT, GT, LE, AL, NV,
         HS = CS, LO = CC, NO_COND
     };
@@ -242,25 +242,41 @@ namespace Instruction::A64 {
         };
 
         SystemRegister();
-
         SystemRegister(u16 value);
-
         SystemRegister(u16 op0, u16 op1, u16 crn, u16 crm, u16 op2);
 
         FORCE_INLINE u16 Value() const {
-            return value.value;
+            return value_.value;
         }
 
         bool operator==(const SystemRegister &rhs) const {
-            return value.value == rhs.value.value;
+            return value_.value == rhs.value_.value;
+        }
+
+        bool operator==(const u16 value) const {
+            return value_.value == value;
+        }
+
+        bool operator!=(const u16 value) const {
+            return value_.value == value;
         }
 
         bool operator!=(const SystemRegister &rhs) const {
-            return value.value != rhs.value.value;
+            return value_.value != rhs.value_.value;
         }
 
     protected:
-        SystemReg value{};
+        SystemReg value_{};
+    };
+
+    namespace SysRegs {
+        static auto NZCV = SystemRegister(3, 3, 4, 2, 0);
+        static auto FPCR = SystemRegister(3, 3, 4, 4, 0);
+        static auto FPSR = SystemRegister(3, 3, 4, 4, 1);
+        static auto RNDR = SystemRegister(3, 3, 2, 4, 0);
+        static auto RNDRRS = SystemRegister(3, 3, 2, 4, 1);
+        static auto TPIDR_EL0 = SystemRegister(3, 3, 13, 0, 2);
+        static auto TPIDRRO_EL0 = SystemRegister(3, 3, 13, 0, 3);
     };
 
     class Operand {

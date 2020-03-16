@@ -4,7 +4,7 @@
 
 #include "instruction_decode.h"
 
-using namespace Instruction::A64;
+using namespace Instructions::A64;
 
 OpcodeA64 DefaultDecoder::DecodeOpCode(InstrA64 instr_bits, InstrTypeA64 type) {
     const auto& instr_map = type == Invalid ? InstructionTableA64::Get().GetInstrTable() : InstructionTableA64::Get().GetInstrTable(type);

@@ -6,7 +6,7 @@
 
 #include <base/marcos.h>
 
-namespace Instruction::IR {
+namespace Instructions::IR {
 #define INST0(x, ...) x,
 #define INST1(x, ...) x,
 #define INST2(x, ...) x,

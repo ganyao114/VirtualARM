@@ -4,7 +4,7 @@
 
 #include "asm/arm64/instruction_decode.h"
 
-using namespace Instruction::A64;
+using namespace Instructions::A64;
 
 InstrA64Ref FastBranchDecoder::DecodeSystemAndBranch(InstrA64 instr_bits) {
     constexpr static InstrA64 B_COND = 0b010;

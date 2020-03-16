@@ -7,7 +7,7 @@
 #include "base/marcos.h"
 #include <vector>
 
-namespace Instruction {
+namespace Instructions {
 
     enum class Condition {
         EQ, NE, CS, CC, MI, PL, VS, VC, HI, LS, GE, LT, GT, LE, AL, NV,

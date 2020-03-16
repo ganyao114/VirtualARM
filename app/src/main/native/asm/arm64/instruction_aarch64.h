@@ -10,7 +10,7 @@
 #include "instruction_table.h"
 #include "cpu_arm64.h"
 
-namespace Instruction::A64 {
+namespace Instructions::A64 {
 
 #define DECODE_OFFSET(val, bits, ext) offset_ = SignExtend<s32, (bits + ext)>(val << ext)
 #define ENCODE_OFFSET(bits, ext) TruncateSTo<bits>(GetOffset() >> ext)
@@ -53,9 +53,9 @@ namespace Instruction::A64 {
 
         InstrA64Branch();
 
-        Condition GetCond() const;
+        Cond GetCond() const;
 
-        void SetCond(Condition cond);
+        void SetCond(Cond cond);
 
         bool HasCond() const;
 
@@ -90,7 +90,7 @@ namespace Instruction::A64 {
         bool Assemble() override;
 
     protected:
-        Condition cond_{AL};
+        Cond cond_{AL};
         bool is_abs_ = true;
         bool link_ = false;
         s32 offset_;

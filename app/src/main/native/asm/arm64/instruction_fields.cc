@@ -4,23 +4,23 @@
 
 #include "instruction_fields.h"
 
-using namespace Instruction::A64;
+using namespace Instructions::A64;
 
 AArch64Inst::AArch64Inst(u32 raw) : raw(raw) {}
 
 SystemRegister::SystemRegister(u16 op0, u16 op1, u16 crn, u16 crm, u16 op2) {
-    value.CRm = crm;
-    value.CRn = crn;
-    value.op0 = op0;
-    value.op1 = op1;
-    value.op2 = op2;
+    value_.CRm = crm;
+    value_.CRn = crn;
+    value_.op0 = op0;
+    value_.op1 = op1;
+    value_.op2 = op2;
 }
 
 SystemRegister::SystemRegister() {
 }
 
 SystemRegister::SystemRegister(u16 value) {
-    this->value.value = value;
+    this->value_.value = value;
 }
 
 A64Register::A64Register() {
@@ -65,7 +65,7 @@ A64Register A64Register::V(u32 data_size, u8 code) {
     }
 }
 
-const std::function<u32(AArch64Inst&)> Instruction::A64::GetAArch64FieldGetFunc(AArch64Fields::Fields field) {
+const std::function<u32(AArch64Inst&)> Instructions::A64::GetAArch64FieldGetFunc(AArch64Fields::Fields field) {
     static const std::function<u32(AArch64Inst&)> functions[] = {
 #define FIELD(name, from, to) \
     [] (AArch64Inst &inst) -> u32 { \
@@ -77,6 +77,6 @@ const std::function<u32(AArch64Inst&)> Instruction::A64::GetAArch64FieldGetFunc(
     return functions[static_cast<u8>(field)];
 }
 
-u32 Instruction::A64::GetAArch64Field(AArch64Fields::Fields type, AArch64Inst &inst) {
+u32 Instructions::A64::GetAArch64Field(AArch64Fields::Fields type, AArch64Inst &inst) {
     return GetAArch64FieldGetFunc(type)(inst);
 }

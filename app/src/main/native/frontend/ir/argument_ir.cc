@@ -4,4 +4,4 @@
 
 #include "argument_ir.h"
 
-using namespace Instruction::IR;
+using namespace Instructions::IR;

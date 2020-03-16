@@ -8,9 +8,9 @@
 #include "argument_ir.h"
 #include "block_ir.h"
 
-using namespace Code::IR;
+using namespace CodeCache::IR;
 
-namespace Instruction::IR {
+namespace Instructions::IR {
 
     class Assembler {
     public:

@@ -5,7 +5,7 @@
 #include "instruction_aarch64.h"
 #include "instruction_decode.h"
 
-using namespace Instruction::A64;
+using namespace Instructions::A64;
 
 InstructionA64::InstructionA64() : backup_({}) {
     SetOpcode(OpcodeA64::UN_DECODED);
@@ -43,11 +43,11 @@ InstrA64Branch::InstrA64Branch() {
     type_ = Branch;
 }
 
-Condition InstrA64Branch::GetCond() const {
+Cond InstrA64Branch::GetCond() const {
     return cond_;
 }
 
-void InstrA64Branch::SetCond(Condition cond) {
+void InstrA64Branch::SetCond(Cond cond) {
     cond_ = cond;
 }
 
@@ -88,7 +88,7 @@ bool InstrA64Branch::Disassemble(AArch64Inst &inst) {
     InstructionA64::Disassemble(inst);
     switch (GetOpcode()) {
         case OpcodeA64::B_cond:
-            SetCond(Condition(inst.cond));
+            SetCond(Cond(inst.cond));
             DECODE_OFFSET(inst.bch_cond_offset, 19, 2);
             break;
         case OpcodeA64::BL:

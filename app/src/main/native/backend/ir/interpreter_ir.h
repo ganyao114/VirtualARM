@@ -6,7 +6,7 @@
 
 #include <frontend/ir/instruction_ir.h>
 
-using namespace Instruction::IR;
+using namespace Instructions::IR;
 
 namespace Backend::IR {
 

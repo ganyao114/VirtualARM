@@ -8,9 +8,9 @@
 #include "frontend/ir/assembler_ir.h"
 #include "frontend/ir/argument_ir.h"
 
-using namespace Instruction::IR;
+using namespace Instructions::IR;
 
-namespace Instruction::A64 {
+namespace Instructions::A64 {
 
 #define INST0(x, ...) x,
 #define INST1(x, ...) x,

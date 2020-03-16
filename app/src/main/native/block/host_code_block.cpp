@@ -5,7 +5,7 @@
 #include <sys/mman.h>
 #include "host_code_block.h"
 
-using namespace Code;
+using namespace CodeCache;
 
 bool BaseBlock::SaveToDisk(std::string path) {
     return false;
