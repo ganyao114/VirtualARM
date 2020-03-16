@@ -15,9 +15,13 @@ void DBI::A64::PageMissTrampoline() {
     auto vaddr = context.forward;
 }
 
-void DBI::A64::CallSvcTrampoline() {
+void DBI::A64::ContextSwitchTrampoline() {
     auto context = Context::Current()->GetCPUContext();
-    auto svc_num = context.forward;
+    auto action = context.forward;
+    auto data = context.forward_ext;
+    switch (action) {
+
+    }
 }
 
 void DBI::A64::SpecTrampoline() {

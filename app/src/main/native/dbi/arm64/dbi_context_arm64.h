@@ -41,11 +41,11 @@ namespace DBI::A64 {
         Label *AllocLabel();
         Label *GetDispatcherLabel();
         Label *GetPageLookupLabel();
-        Label *GetCallSvcLabel();
+        Label *GetContextSwitchLabel();
         Label *GetSpecLabel();
         void BindDispatcherTrampoline(VAddr addr);
         void BindPageLookupTrampoline(VAddr addr);
-        void BindCallSvcTrampoline(VAddr addr);
+        void BindContextSwitchTrampoline(VAddr addr);
         void BindSpecTrampoline(VAddr addr);
     private:
         VAddr dest_buffer_start_;
@@ -53,7 +53,7 @@ namespace DBI::A64 {
         std::list<Label*> labels_;
         Label dispatcher_label_;
         Label page_lookup_label_;
-        Label call_svc_label_;
+        Label context_switch_label_;
         Label spec_label_;
     };
 
@@ -185,6 +185,7 @@ namespace DBI::A64 {
         virtual void RestoreContextCallerSaved(bool protect_lr = false);
         virtual void PrepareHostStack();
         virtual void PrepareGuestStack();
+        virtual void CheckPCAndDispatch();
 
         // brunch
         void FindForwardTarget(u8 reg_target);
@@ -197,7 +198,7 @@ namespace DBI::A64 {
 
         // trampolines
         void DispatherStub(CodeBlockRef block);
-        void CallSvcStub(CodeBlockRef block);
+        void ContextSwitchStub(CodeBlockRef block);
         void SpecStub(CodeBlockRef block);
 
     protected:
@@ -212,7 +213,6 @@ namespace DBI::A64 {
         } cursor_;
         // must pic code
         MacroAssembler masm_{PositionIndependentCode};
-        u64 suspend_addr_;
         SharedPtr<FindTable<VAddr>> code_find_table_;
     };
 
