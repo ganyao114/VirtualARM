@@ -62,6 +62,11 @@ std::mutex &BaseBlock::Lock() {
     return lock_;
 }
 
+VAddr BaseBlock::Base() {
+    return start_;
+}
+
+
 static VAddr MapCodeMemory(u32 size) {
     return reinterpret_cast<VAddr>(mmap(0, size, PROT_READ | PROT_WRITE | PROT_EXEC,
                                         MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED,
@@ -74,10 +79,13 @@ static void UnMapCodeMemory(VAddr start, u32 size) {
 
 A64::CodeBlock::CodeBlock(u32 forward_reg_rec_size, u32 block_size) : BaseBlock(
         MapCodeMemory(block_size), block_size), forward_reg_rec_size_(forward_reg_rec_size) {
+    // init block base
+    assert(Base() % PAGE_SIZE == 0);
+    module_base_ = reinterpret_cast<VAddr*>(Base());
     // init dispatcher table
     dispatcher_count_ = std::min<u32>(block_size >> 8, UINT16_MAX);
-    dispatcher_table_ = reinterpret_cast<DispatcherTable *>(start_);
-    current_offset_ = (sizeof(Dispatcher) * dispatcher_count_) >> 2;
+    dispatcher_table_ = reinterpret_cast<DispatcherTable *>(start_ + sizeof(VAddr));
+    current_offset_ = (sizeof(Dispatcher) * dispatcher_count_ + sizeof(VAddr)) >> 2;
 }
 
 A64::CodeBlock::~CodeBlock() {
@@ -110,4 +118,12 @@ VAddr A64::CodeBlock::GetDispatcherOffset(Buffer &buffer, bool with_pop_forward)
 void A64::CodeBlock::FlushCodeBuffer(Buffer &buffer, u32 size) {
     BaseBlock::FlushCodeBuffer(buffer, size);
     GenDispatcher(buffer);
+}
+
+VAddr A64::CodeBlock::ModuleMapAddressAddress() {
+    return Base();
+}
+
+void A64::CodeBlock::SetModuleMapAddress(VAddr addr) {
+    *module_base_ = addr;
 }

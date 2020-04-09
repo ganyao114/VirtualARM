@@ -43,10 +43,12 @@ namespace DBI::A64 {
         Label *GetPageLookupLabel();
         Label *GetContextSwitchLabel();
         Label *GetSpecLabel();
+        Label *GetMapAddressLabel();
         void BindDispatcherTrampoline(VAddr addr);
         void BindPageLookupTrampoline(VAddr addr);
         void BindContextSwitchTrampoline(VAddr addr);
         void BindSpecTrampoline(VAddr addr);
+        void BindMapAddress(VAddr addr);
     private:
         VAddr dest_buffer_start_;
         MacroAssembler &masm_;
@@ -55,10 +57,19 @@ namespace DBI::A64 {
         Label page_lookup_label_;
         Label context_switch_label_;
         Label spec_label_;
+        Label map_address_label_;
     };
 
     class Context : public BaseObject {
     public:
+
+        enum ModifyCodeType {
+            LoadMemory,
+            StoreMemory,
+            ExceptionGen,
+            Brunch,
+            ReadWriteSysRegs
+        };
 
         Context(const Register &reg_ctx, const Register &reg_forward);
         virtual ~Context();
@@ -160,6 +171,10 @@ namespace DBI::A64 {
 
         void SavePc(VAddr pc, Register tmp);
 
+        void SavePcByModuleOffset(s64 offset, Register tmp1, Register tmp2);
+
+        void LoadPcByModuleOffset(s64 offset, Register target, Register tmp2);
+
         const CPU::A64::CPUContext &GetCPUContext() const;
 
         void LoadFromContext(Register target, VAddr offset);
@@ -172,6 +187,11 @@ namespace DBI::A64 {
 
         virtual void GetSp(u8 target) {};
         virtual void GetPc(u8 target) {};
+
+
+        // mark translated codes
+        void ModifyCodeStart(ModifyCodeType type);
+        void ModifyCodeEnd();
 
         // Set Register
         void SetRegisterX(u8 reg_x, u64 value);
@@ -193,11 +213,23 @@ namespace DBI::A64 {
         // brunch
         void FindForwardTarget(u8 reg_target);
         void FindForwardTarget(VAddr const_target);
-        void RestoreForwardRegister();
         virtual u32 CodeSizeOfForwardRestore() = 0;
+        void BeforeDispatch();
+        void AfterDispatch(VAddr pc, bool is_offset = false);
 
         // system
         void CallSvc(u32 svc_num);
+
+        // read write
+        template <typename T, bool is_float = false>
+        void ReadMemory(const VAddr vaddr, u8 target_reg) {
+
+        }
+
+        template <typename T, bool is_float = false>
+        void ReadMemory(u8 vaddr_reg, u8 target_reg) {
+
+        }
 
         // trampolines
         void DispatherStub(CodeBlockRef block);

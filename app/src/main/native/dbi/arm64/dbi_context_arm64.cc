@@ -44,6 +44,10 @@ Label *LabelHolder::GetSpecLabel() {
     return &spec_label_;
 }
 
+Label *LabelHolder::GetMapAddressLabel() {
+    return &map_address_label_;
+}
+
 void LabelHolder::BindDispatcherTrampoline(VAddr addr) {
     assert(dest_buffer_start_);
     ptrdiff_t offset = dest_buffer_start_ - addr;
@@ -67,6 +71,13 @@ void LabelHolder::BindSpecTrampoline(VAddr addr) {
     ptrdiff_t offset = dest_buffer_start_ - addr;
     __ BindToOffset(&spec_label_, offset);
 }
+
+void LabelHolder::BindMapAddress(VAddr addr) {
+    assert(dest_buffer_start_);
+    ptrdiff_t offset = dest_buffer_start_ - addr;
+    __ BindToOffset(&map_address_label_, offset);
+}
+
 
 Context::Context(const Register &reg_ctx, const Register &reg_forward)
         : masm_{}, reg_ctx_{reg_ctx}, reg_forward_(reg_forward) {
@@ -99,6 +110,7 @@ void Context::FlushCodeCache(CodeBlockRef block, bool bind_stub) {
         cursor_.label_holder_->BindContextSwitchTrampoline(block->GetBufferStart(1));
         cursor_.label_holder_->BindSpecTrampoline(block->GetBufferStart(2));
         cursor_.label_holder_->BindPageLookupTrampoline(block->GetBufferStart(3));
+        cursor_.label_holder_->BindMapAddress(block->ModuleMapAddressAddress());
     }
     __ FinalizeCode();
     std::memcpy(reinterpret_cast<void *>(buffer_start), __ GetBuffer()->GetStartAddress<void *>(),
@@ -184,6 +196,22 @@ void Context::SavePc(VAddr pc, Register tmp) {
     __ Str(tmp, MemOperand(reg_ctx_, OFFSET_CTX_A64_PC));
 }
 
+void Context::SavePcByModuleOffset(s64 offset, Register tmp1, Register tmp2) {
+    LoadPcByModuleOffset(offset, tmp1, tmp2);
+    __ Str(tmp1, MemOperand(reg_ctx_, OFFSET_CTX_A64_PC));
+}
+
+void Context::LoadPcByModuleOffset(s64 offset, Register target, Register tmp2) {
+    __ Adrp(target, cursor_.label_holder_->GetMapAddressLabel());
+    __ Ldr(target, MemOperand(target));
+    __ Mov(tmp2, static_cast<u64>(std::abs(offset)));
+    if (offset >= 0) {
+        __ Add(target, target, tmp2);
+    } else {
+        __ Sub(target, target, tmp2);
+    }
+}
+
 void Context::LoadFromContext(Register rt, VAddr offset) {
     if (reg_ctx_.GetCode() == rt.GetCode()) {
         auto wrap = [this, rt, offset](std::array<Register, 1> tmp) -> void {
@@ -257,11 +285,24 @@ void Context::FindForwardTarget(VAddr const_target) {
 
 }
 
-void Context::RestoreForwardRegister() {
-    auto wrap = [this](std::array<Register, 0> tmp) -> void {
-        PopX(reg_forward_);
-    };
-    WrapContext<0>(wrap);
+void Context::BeforeDispatch() {
+    PushX(reg_forward_);
+}
+
+void Context::AfterDispatch(VAddr pc, bool is_offset) {
+    if (is_offset) {
+        auto wrap = [this, pc](std::array<Register, 1> tmp) -> void {
+            SavePcByModuleOffset(pc, reg_forward_, tmp[0]);
+            PopX(reg_forward_);
+        };
+        WrapContext<1>(wrap, {reg_forward_});
+    } else {
+        auto wrap = [this, pc](std::array<Register, 0> tmp) -> void {
+            SavePc(pc, reg_forward_);
+            PopX(reg_forward_);
+        };
+        WrapContext<0>(wrap);
+    }
 }
 
 void Context::SaveContextFull(bool protect_lr) {
@@ -532,6 +573,14 @@ void Context::CheckPCAndDispatch() {
         __ Bind(not_changed);
     };
     WrapContext<2>(wrap);
+}
+
+void Context::ModifyCodeStart(Context::ModifyCodeType type) {
+
+}
+
+void Context::ModifyCodeEnd() {
+
 }
 
 ContextNoMemTrace::ContextNoMemTrace() : Context(TMP1, TMP0) {

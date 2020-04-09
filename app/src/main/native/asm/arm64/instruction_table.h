@@ -153,6 +153,8 @@ namespace Instructions::A64 {
 
     struct BaseVisitor {
         AArch64Inst *inst;
+        // maybe a so or exe load base
+        VAddr module_base{0};
     };
 
     class InstructionTableA64 {

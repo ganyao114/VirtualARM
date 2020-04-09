@@ -11,6 +11,8 @@ using namespace Instructions::A64;
 
 namespace DBI::A64 {
 
+#define __ context_->Assembler().
+
 template <unsigned bits, unsigned ext = 0>
 static constexpr s32 DecodeOffset(u32 imm) {
     return SignExtend<s32, (bits + ext)>(imm << ext);
@@ -110,7 +112,17 @@ struct Visitor : public BaseVisitor {
                 offset <<= PAGE_SIZE;
             }
             auto target = RoundDown(reinterpret_cast<VAddr>(inst), PAGE_SIZE) + offset;
-            context_->SetRegisterX(Rd, target);
+
+            if (module_base) {
+                // has a module base
+                auto wrap = [this, Rd, target](std::array<Register, 1> tmp) -> void {
+                    context_->LoadPcByModuleOffset(target - module_base, XRegister::GetXRegFromCode(Rd), tmp[0]);
+                    context_->SetRegisterX(Rd, target);
+                };
+                context_->WrapContext<1>(wrap, {XRegister::GetXRegFromCode(Rd)});
+            } else {
+                context_->SetRegisterX(Rd, target);
+            }
         }
 
         template<typename T, unsigned flags = 0>
@@ -125,4 +137,5 @@ struct Visitor : public BaseVisitor {
         }
     };
 
+#undef __
 }

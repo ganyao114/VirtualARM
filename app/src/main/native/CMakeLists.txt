@@ -37,7 +37,7 @@ add_library(virtual_arm SHARED
         backend/ir/interpreter_ir.cc
         block/code_block.cc
         dbi/arm64/dbi_arm64.cc
-        dbi/arm64/dbi_visitor_arm64.cc
+        dbi/arm64/dbi_jit_arm64.cc
         dbi/arm64/dbi_context_arm64.cc
         dbi/arm64/dbi_mmu_arm64.cpp
         dbi/arm64/dbi_trampolines_arm64.cc
