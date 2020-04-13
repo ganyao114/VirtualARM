@@ -40,7 +40,6 @@ int CountLeadingZerosFallBack(uint64_t value, int width) {
 }
 
 void ClearCachePlatform(VAddr start, VAddr size) {
-#if defined(__AAECH64__)
-    __clear_cache(start, size);
-#endif
+    char *end = reinterpret_cast<char *>(start + size);
+    __builtin___clear_cache(reinterpret_cast<char *>(start), end);
 }
