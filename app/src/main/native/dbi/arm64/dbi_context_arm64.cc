@@ -252,7 +252,7 @@ void Context::FindForwardTarget(u8 reg_target) {
         auto *gen_code = cursor_.label_holder_->GetDispatcherLabel();
         // Find hash table
         __ Ldr(tmp[0], MemOperand(reg_ctx_, OFFSET_CTX_A64_DISPATCHER_TABLE));
-        __ Mov(tmp[1], Operand(rt, LSR, CODE_CACHE_HASH_BITS));
+        __ Lsr(tmp[1], rt, CODE_CACHE_HASH_BITS);
         __ Bfc(tmp[1], code_find_table_->TableBits(),
                sizeof(VAddr) * 8 - code_find_table_->TableBits());
         __ Ldr(tmp[0], MemOperand(tmp[0], tmp[1], LSL, 3));
@@ -634,7 +634,6 @@ ContextWithMemTrace::ContextWithMemTrace(SharedPtr<A64MMU> mmu) : Context(TMP1, 
     tlb_bits_ = mmu->Tbl()->TLBBits();
     context_.tlb = mmu->Tbl()->TLBTablePtr();
     context_.page_table = mmu->TopPageTable();
-    u32 res = mmu->Read<u32>(0);
 }
 
 void ContextWithMemTrace::LookupFlatPageTable(u8 reg_addr) {
@@ -642,7 +641,7 @@ void ContextWithMemTrace::LookupFlatPageTable(u8 reg_addr) {
     auto wrap = [this, rt](std::array<Register, 2> tmp) -> void {
         auto tmp1 = tmp[0];
         auto tmp2 = tmp[1];
-        __ Mov(tmp1, Operand(rt, LSR, page_bits_));
+        __ Lsr(tmp1, rt, page_bits_);
         __ Bfc(tmp1, sizeof(VAddr) * 8 - address_bits_unused_ - page_bits_,
                address_bits_unused_ + page_bits_);
         __ Ldr(tmp2, MemOperand(reg_ctx_, OFFSET_CTX_A64_PAGE_TABLE));
@@ -675,13 +674,15 @@ void ContextWithMemTrace::LookupTLB(u8 reg_addr) {
         auto tmp1 = tmp[0];
         auto tmp2 = tmp[1];
         auto tmp3 = tmp[2];
-        __ Mov(tmp1, Operand(rt, LSR, page_bits_));
+        __ Mov(tmp1, Operand(rt));
+        __ Lsr(tmp1, tmp1, page_bits_);
         __ Bfc(tmp1, tlb_bits_, sizeof(VAddr) * 8 - tlb_bits_);
         __ Ldr(tmp2, MemOperand(reg_ctx_, OFFSET_CTX_A64_TLB));
         // PTE size of a64 = 8, key = 8,so size of tlb entry = 16
-        __ Add(tmp1, tmp2, Operand(tmp1, LSL, 4));
+        __ Lsl(tmp1, tmp1, 4);
+        __ Add(tmp1, tmp2, tmp1);
         __ Ldr(tmp3, MemOperand(tmp1));
-        __ Mov(tmp2, Operand(rt, LSR, page_bits_));
+        __ Lsr(tmp2, rt, page_bits_);
         __ Sub(tmp3, tmp3, tmp2);
         __ Cbz(tmp3, label_hit);
         // miss cache
@@ -714,9 +715,8 @@ void ContextWithMemTrace::PageLookupStub(CodeBlockRef block) {
         // top page table
         __ Ldr(tmp[1], MemOperand(reg_ctx_, OFFSET_CTX_A64_PAGE_TABLE));
         while (level > 1) {
-            __ Mov(tmp[2], Operand(tmp[0], LSR,
-                                   static_cast<unsigned int>(mmu_->GetPageBits() *
-                                                             (level - 1))));
+            __ Lsr(tmp[2], tmp[0], static_cast<unsigned int>(mmu_->GetPageBits() *
+                                                             (level - 1)));
             if (level != mmu_->GetLevel()) {
                 // clear upper level bits
                 __ Bfc(tmp[2], mmu_->GetPteBits() * (level - 1), mmu_->GetPteBits() * (level - 1));
