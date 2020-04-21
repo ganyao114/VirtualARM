@@ -85,15 +85,19 @@ namespace DBI::A64 {
 
         Label *Label();
 
-        template<u8 temp_count>
+        template<u8 temp_count, bool protect_tmp = true>
         void WrapContext(std::function<void(std::array<Register, temp_count>)> wrap,
                          std::initializer_list<Register> effect_regs = {}) {
             auto temp_regs = GetTmpRegisters<temp_count>(effect_regs);
-            LoadContext();
-            PushX<temp_count>(temp_regs);
+            LoadContext(protect_tmp);
+            if (protect_tmp) {
+                PushX<temp_count>(temp_regs);
+            }
             wrap(temp_regs);
-            PopX<temp_count>(temp_regs);
-            ClearContext();
+            if (protect_tmp) {
+                PopX<temp_count>(temp_regs);
+                ClearContext();
+            }
         }
 
         template<u8 temp_count>
@@ -121,7 +125,7 @@ namespace DBI::A64 {
             return temps;
         }
 
-        virtual void LoadContext() {};
+        virtual void LoadContext(bool protect_tmp = true) {};
 
         virtual void ClearContext() {};
 
@@ -253,7 +257,7 @@ namespace DBI::A64 {
 
     class ContextNoMemTrace : public Context {
     public:
-        void LoadContext() override;
+        void LoadContext(bool protect_tmp) override;
 
         void ClearContext() override;
 

@@ -383,7 +383,7 @@ void Context::RestoreContextFull(bool protect_lr) {
                    MemOperand(tmp[0], 16 * i));
         }
     };
-    WrapContext<1>(wrap);
+    WrapContext<1, false>(wrap);
 }
 
 void Context::SaveContextCallerSaved(bool protect_lr) {
@@ -605,16 +605,20 @@ void ContextNoMemTrace::PostDispatch() {
     __ Pop(TMP0, TMP1);
 }
 
-void ContextNoMemTrace::LoadContext() {
-    __ Push(reg_ctx_);
+void ContextNoMemTrace::LoadContext(bool protect_tmp) {
+    if (protect_tmp) {
+        __ Push(reg_ctx_);
+    }
     __ Mrs(reg_ctx_, TPIDR_EL0);
     __ Ldr(reg_ctx_, MemOperand(reg_ctx_, CTX_TLS_SLOT * 8));
-    // save tmp0, tmp1
-    __ Str(TMP0, MemOperand(reg_ctx_, OFFSET_CTX_A64_CPU_REG + TMP0.GetCode() * 8));
-    __ Pop(TMP0);
-    __ Str(TMP0, MemOperand(reg_ctx_, OFFSET_CTX_A64_CPU_REG + reg_ctx_.GetCode() * 8));
-    // restore tmp0
-    __ Ldr(TMP0, MemOperand(reg_ctx_, OFFSET_CTX_A64_CPU_REG + TMP0.GetCode() * 8));
+    if (protect_tmp) {
+        // save tmp0, tmp1
+        __ Str(TMP0, MemOperand(reg_ctx_, OFFSET_CTX_A64_CPU_REG + TMP0.GetCode() * 8));
+        __ Pop(TMP0);
+        __ Str(TMP0, MemOperand(reg_ctx_, OFFSET_CTX_A64_CPU_REG + reg_ctx_.GetCode() * 8));
+        // restore tmp0
+        __ Ldr(TMP0, MemOperand(reg_ctx_, OFFSET_CTX_A64_CPU_REG + TMP0.GetCode() * 8));
+    }
 }
 
 void ContextNoMemTrace::ClearContext() {
