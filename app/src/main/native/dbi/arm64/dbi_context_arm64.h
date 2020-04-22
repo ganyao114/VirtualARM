@@ -27,7 +27,8 @@ namespace DBI::A64 {
 #define CTX_TLS_SLOT 7
 #define TMP0 x17
 #define TMP1 x16
-#define SP x31
+#define SP sp
+#define LR x30
 #define HOST_TLS ({ void** __val; __asm__("mrs %0, tpidr_el0" : "=r"(__val)); __val; })
 #define HOST_STACK_SIZE (1U << 20)
 
