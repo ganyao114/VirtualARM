@@ -50,31 +50,31 @@ Label *LabelHolder::GetMapAddressLabel() {
 
 void LabelHolder::BindDispatcherTrampoline(VAddr addr) {
     assert(dest_buffer_start_);
-    ptrdiff_t offset = dest_buffer_start_ - addr;
+    ptrdiff_t offset = addr - dest_buffer_start_;
     __ BindToOffset(&dispatcher_label_, offset);
 }
 
 void LabelHolder::BindPageLookupTrampoline(VAddr addr) {
     assert(dest_buffer_start_);
-    ptrdiff_t offset = dest_buffer_start_ - addr;
+    ptrdiff_t offset = addr - dest_buffer_start_;
     __ BindToOffset(&page_lookup_label_, offset);
 }
 
 void LabelHolder::BindContextSwitchTrampoline(VAddr addr) {
     assert(dest_buffer_start_);
-    ptrdiff_t offset = dest_buffer_start_ - addr ;
+    ptrdiff_t offset = addr - dest_buffer_start_ ;
     __ BindToOffset(&context_switch_label_, offset);
 }
 
 void LabelHolder::BindSpecTrampoline(VAddr addr) {
     assert(dest_buffer_start_);
-    ptrdiff_t offset = dest_buffer_start_ - addr;
+    ptrdiff_t offset = addr - dest_buffer_start_;
     __ BindToOffset(&spec_label_, offset);
 }
 
 void LabelHolder::BindMapAddress(VAddr addr) {
     assert(dest_buffer_start_);
-    ptrdiff_t offset = dest_buffer_start_ - addr;
+    ptrdiff_t offset = addr - dest_buffer_start_;
     __ BindToOffset(&map_address_label_, offset);
 }
 
@@ -332,7 +332,7 @@ void Context::SaveContextFull(bool protect_lr) {
         __ Mrs(tmp[0], FPSR);
         __ Str(tmp[0].W(), MemOperand(reg_ctx_, OFFSET_CTX_A64_FPSR));
         // Sp
-        __ Str(sp, MemOperand(reg_ctx_, OFFSET_CTX_A64_SP));
+        __ Str(SP, MemOperand(reg_ctx_, OFFSET_CTX_A64_SP));
         // Protect Pc
         // Pc could be changed by host
         // dispatch if changed
@@ -375,7 +375,7 @@ void Context::RestoreContextFull(bool protect_lr) {
         __ Ldr(tmp[0].W(), MemOperand(reg_ctx_, OFFSET_CTX_A64_FPSR));
         __ Msr(FPSR, tmp[0]);
         // Sp
-        __ Ldr(sp, MemOperand(reg_ctx_, OFFSET_CTX_A64_SP));
+        __ Ldr(SP, MemOperand(reg_ctx_, OFFSET_CTX_A64_SP));
         // VRegs
         __ Add(tmp[0], reg_ctx_, OFFSET_CTX_A64_VEC_REG);
         for (int i = 0; i < 32; i += 2) {
@@ -414,7 +414,7 @@ void Context::SaveContextCallerSaved(bool protect_lr) {
         __ Mrs(tmp[0], FPSR);
         __ Str(tmp[0].W(), MemOperand(reg_ctx_, OFFSET_CTX_A64_FPSR));
         // Sp
-        __ Str(sp, MemOperand(reg_ctx_, OFFSET_CTX_A64_SP));
+        __ Str(SP, MemOperand(reg_ctx_, OFFSET_CTX_A64_SP));
         // Pc
         __ Mov(tmp[0], cur_pc_);
         __ Str(tmp[0], MemOperand(reg_ctx_, OFFSET_CTX_A64_PC));
@@ -455,7 +455,7 @@ void Context::RestoreContextCallerSaved(bool protect_lr) {
         __ Ldr(tmp[0].W(), MemOperand(reg_ctx_, OFFSET_CTX_A64_FPSR));
         __ Msr(FPSR, tmp[0]);
         // Sp
-        __ Ldr(sp, MemOperand(reg_ctx_, OFFSET_CTX_A64_SP));
+        __ Ldr(SP, MemOperand(reg_ctx_, OFFSET_CTX_A64_SP));
         // VRegs
         __ Add(tmp[0], reg_ctx_, OFFSET_CTX_A64_VEC_REG);
         for (int i = 0; i < 32; i += 2) {
