@@ -53,7 +53,7 @@ void Visitor::TBNZ(u32 Rt, u32 b5, u32 b40, u32 tbz_offset) {
 }
 
 void Visitor::RET() {
-    BrunchReg(static_cast<s32>(XReg::LR));
+    BrunchReg(static_cast<s32>(XReg::X30));
 }
 
 // System

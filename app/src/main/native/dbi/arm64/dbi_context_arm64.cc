@@ -325,14 +325,16 @@ void Context::SaveContextFull(bool protect_lr) {
             __ Str(x30, MemOperand(reg_ctx_, protect_lr ? 8 * 30 : OFFSET_CTX_A64_TMP_LR));
         }
         // Sysregs
-        __ Mrs(tmp[0], NZCV);
+        __ Mrs(tmp[0].W(), NZCV);
         __ Str(tmp[0].W(), MemOperand(reg_ctx_, OFFSET_CTX_A64_PSTATE));
-        __ Mrs(tmp[0], FPCR);
+        __ Mrs(tmp[0].W(), FPCR);
         __ Str(tmp[0].W(), MemOperand(reg_ctx_, OFFSET_CTX_A64_FPCR));
-        __ Mrs(tmp[0], FPSR);
+        __ Mrs(tmp[0].W(), FPSR);
         __ Str(tmp[0].W(), MemOperand(reg_ctx_, OFFSET_CTX_A64_FPSR));
         // Sp
-        __ Str(SP, MemOperand(reg_ctx_, OFFSET_CTX_A64_SP));
+        PushSp(tmp[0]);
+        // Host SP
+        PopSp(tmp[0], OFFSET_CTX_A64_HOST_SP);
         // Protect Pc
         // Pc could be changed by host
         // dispatch if changed
@@ -369,13 +371,15 @@ void Context::RestoreContextFull(bool protect_lr) {
         }
         // Sysregs
         __ Ldr(tmp[0].W(), MemOperand(reg_ctx_, OFFSET_CTX_A64_PSTATE));
-        __ Msr(NZCV, tmp[0]);
+        __ Msr(NZCV, tmp[0].W());
         __ Ldr(tmp[0].W(), MemOperand(reg_ctx_, OFFSET_CTX_A64_FPCR));
-        __ Msr(FPCR, tmp[0]);
+        __ Msr(FPCR, tmp[0].W());
         __ Ldr(tmp[0].W(), MemOperand(reg_ctx_, OFFSET_CTX_A64_FPSR));
-        __ Msr(FPSR, tmp[0]);
-        // Sp
-        __ Ldr(SP, MemOperand(reg_ctx_, OFFSET_CTX_A64_SP));
+        __ Msr(FPSR, tmp[0].W());
+        // Host Sp
+        PushSp(tmp[0], OFFSET_CTX_A64_HOST_SP);
+        // Guest SP
+        PopSp(tmp[0]);
         // VRegs
         __ Add(tmp[0], reg_ctx_, OFFSET_CTX_A64_VEC_REG);
         for (int i = 0; i < 32; i += 2) {
@@ -407,14 +411,16 @@ void Context::SaveContextCallerSaved(bool protect_lr) {
             __ Str(LR, MemOperand(reg_ctx_, protect_lr ? 8 * 30 : OFFSET_CTX_A64_TMP_LR));
         }
         // Sysregs
-        __ Mrs(tmp[0], NZCV);
+        __ Mrs(tmp[0].W(), NZCV);
         __ Str(tmp[0].W(), MemOperand(reg_ctx_, OFFSET_CTX_A64_PSTATE));
-        __ Mrs(tmp[0], FPCR);
+        __ Mrs(tmp[0].W(), FPCR);
         __ Str(tmp[0].W(), MemOperand(reg_ctx_, OFFSET_CTX_A64_FPCR));
-        __ Mrs(tmp[0], FPSR);
+        __ Mrs(tmp[0].W(), FPSR);
         __ Str(tmp[0].W(), MemOperand(reg_ctx_, OFFSET_CTX_A64_FPSR));
         // Sp
-        __ Str(SP, MemOperand(reg_ctx_, OFFSET_CTX_A64_SP));
+        PushSp(tmp[0]);
+        // Host SP
+        PopSp(tmp[0], OFFSET_CTX_A64_HOST_SP);
         // Pc
         __ Mov(tmp[0], cur_pc_);
         __ Str(tmp[0], MemOperand(reg_ctx_, OFFSET_CTX_A64_PC));
@@ -449,13 +455,15 @@ void Context::RestoreContextCallerSaved(bool protect_lr) {
         }
         // Sysregs
         __ Ldr(tmp[0].W(), MemOperand(reg_ctx_, OFFSET_CTX_A64_PSTATE));
-        __ Msr(NZCV, tmp[0]);
+        __ Msr(NZCV, tmp[0].W());
         __ Ldr(tmp[0].W(), MemOperand(reg_ctx_, OFFSET_CTX_A64_FPCR));
-        __ Msr(FPCR, tmp[0]);
+        __ Msr(FPCR, tmp[0].W());
         __ Ldr(tmp[0].W(), MemOperand(reg_ctx_, OFFSET_CTX_A64_FPSR));
-        __ Msr(FPSR, tmp[0]);
-        // Sp
-        __ Ldr(SP, MemOperand(reg_ctx_, OFFSET_CTX_A64_SP));
+        __ Msr(FPSR, tmp[0].W());
+        // Host Sp
+        PushSp(tmp[0], OFFSET_CTX_A64_HOST_SP);
+        // Guest SP
+        PopSp(tmp[0]);
         // VRegs
         __ Add(tmp[0], reg_ctx_, OFFSET_CTX_A64_VEC_REG);
         for (int i = 0; i < 32; i += 2) {
@@ -482,13 +490,8 @@ void Context::CallSvc(u32 svc_num) {
 void Context::DispatherStub(CodeBlockRef block) {
     __ Reset();
     SaveContextCallerSaved();
-    PrepareHostStack();
-    LoadContext();
-    __ Push(reg_ctx_);
     __ Mov(x0, reinterpret_cast<VAddr>(CodeCacheDispatcherTrampoline));
     __ Blr(x0);
-    __ Pop(reg_ctx_);
-    PrepareGuestStack();
     RestoreContextCallerSaved();
     __ Ret();
     __ FinalizeCode();
@@ -504,13 +507,8 @@ void Context::ContextSwitchStub(CodeBlockRef block) {
     SetCodeCachePosition(0);
     __ Reset();
     SaveContextFull();
-    PrepareHostStack();
-    LoadContext();
-    __ Push(reg_ctx_);
     __ Mov(x0, reinterpret_cast<VAddr>(ContextSwitchTrampoline));
     __ Blr(x0);
-    __ Pop(reg_ctx_);
-    PrepareGuestStack();
     RestoreContextFull();
     CheckPCAndDispatch();
     __ Ret();
@@ -528,13 +526,8 @@ void Context::ContextSwitchStub(CodeBlockRef block) {
 void Context::SpecStub(CodeBlockRef block) {
     __ Reset();
     SaveContextCallerSaved();
-    PrepareHostStack();
-    LoadContext();
-    __ Push(reg_ctx_);
     __ Mov(x0, reinterpret_cast<VAddr>(SpecTrampoline));
     __ Blr(x0);
-    __ Pop(reg_ctx_);
-    PrepareGuestStack();
     RestoreContextCallerSaved();
     __ Ret();
     __ FinalizeCode();
@@ -544,14 +537,6 @@ void Context::SpecStub(CodeBlockRef block) {
     std::memcpy(reinterpret_cast<void *>(block->GetBufferStart(buffer)), __ GetBuffer()->GetStartAddress<void *>(), stub_size);
     ClearCachePlatform(block->GetBufferStart(buffer), stub_size);
     __ Reset();
-}
-
-void Context::PrepareHostStack() {
-    __ Ldr(sp, MemOperand(reg_ctx_, OFFSET_CTX_A64_HOST_SP));
-}
-
-void Context::PrepareGuestStack() {
-    __ Str(sp, MemOperand(reg_ctx_, OFFSET_CTX_A64_HOST_SP));
 }
 
 void Context::CheckPCAndDispatch() {
@@ -581,6 +566,16 @@ void Context::ModifyCodeStart(Context::ModifyCodeType type) {
 
 void Context::ModifyCodeEnd() {
 
+}
+
+void Context::PushSp(Register &tmp, u32 offset) {
+    __ Mov(tmp, sp);
+    __ Str(tmp, MemOperand(reg_ctx_, offset));
+}
+
+void Context::PopSp(Register &tmp, u32 offset) {
+    __ Ldr(tmp, MemOperand(reg_ctx_, offset));
+    __ Mov(sp, tmp);
 }
 
 ContextNoMemTrace::ContextNoMemTrace() : Context(TMP1, TMP0) {

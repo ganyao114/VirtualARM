@@ -27,7 +27,6 @@ namespace DBI::A64 {
 #define CTX_TLS_SLOT 7
 #define TMP0 x17
 #define TMP1 x16
-#define SP sp
 #define LR x30
 #define HOST_TLS ({ void** __val; __asm__("mrs %0, tpidr_el0" : "=r"(__val)); __val; })
 #define HOST_STACK_SIZE (1U << 20)
@@ -185,6 +184,10 @@ namespace DBI::A64 {
 
         void LoadFromContext(Register target, VAddr offset);
 
+        void PushSp(Register &tmp, u32 offset = OFFSET_CTX_A64_SP);
+
+        void PopSp(Register &tmp, u32 offset = OFFSET_CTX_A64_SP);
+
         VAddr GetCurPc() const;
 
         void SetCurPc(VAddr cur_pc);
@@ -212,8 +215,6 @@ namespace DBI::A64 {
         virtual void RestoreContextFull(bool protect_lr = false);
         virtual void SaveContextCallerSaved(bool protect_lr = false);
         virtual void RestoreContextCallerSaved(bool protect_lr = false);
-        virtual void PrepareHostStack();
-        virtual void PrepareGuestStack();
         virtual void CheckPCAndDispatch();
 
         // brunch
